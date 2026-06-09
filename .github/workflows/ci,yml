@@ -1,0 +1,36 @@
+name: Node.js CI (cineTIX)
+
+# Menentukan kapan CI ini akan berjalan otomatis
+on:
+  push:
+    branches: [ "main" ] # Berjalan setiap ada push ke branch main
+  pull_request:
+    branches: [ "main" ] # Berjalan setiap ada pull request ke branch main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Menjalankan CI di komputer server Ubuntu milik GitHub
+
+    steps:
+    # Langkah 1: Download/Copy kode proyek Anda ke server GitHub
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Langkah 2: Install Node.js di server GitHub
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-with: 20 # Anda bisa ganti versi Node.js sesuai yang Anda pakai (misal: 18, 20, 22)
+        cache: 'npm'  # Mempercepat proses install dengan cache
+
+    # Langkah 3: Install semua dependency/library (node_modules)
+    - name: Install dependencies
+      run: npm ci
+
+    # Langkah 4: Melakukan proses Build (memastikan tidak ada error TypeScript)
+    - name: Run Build
+      run: npm run build --if-present
+
+    # Langkah 5: Menjalankan Automated Testing (jika ada unit test)
+    - name: Run Tests
+      run: npm test --if-present
