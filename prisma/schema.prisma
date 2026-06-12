@@ -1,0 +1,20 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Pengguna {
+  id_pengguna    Int      @id @default(autoincrement())
+  email          String   @unique
+  password       String   // Tambahkan ini
+  nama           String?
+  no_telepon     String?  // Tambahkan ini
+  role           String   @default("user")
+  status         String   @default("active") // Tambahkan ini
+  tanggal_daftar DateTime @default(now())   // Tambahkan ini
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

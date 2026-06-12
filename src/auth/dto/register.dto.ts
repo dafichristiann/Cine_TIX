@@ -1,25 +1,28 @@
-import {isEmail, IsNotEmpty, IsString, MinLength, IsOptional, MaxLength, IsEmail} from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
-    @ApiProperty({ example: ' Dafi Christian'})
-    @IsString()
-    @MaxLength(100)
-    nama!: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
 
-    @ApiProperty({ example: 'dafi@gmail.com '})
-    @IsEmail({},{message: 'Email tidak valid'})
-    @MaxLength(150)
-    email!: string;
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6, { message: 'Password minimal harus 6 karakter' })
+  password!: string;
 
-    @ApiProperty({ example: 'password123',minLength: 8 })
-    @IsString()
-    @MinLength(8, { message: 'Password minimal 8 karakter' })
-    password!: string;
+  @IsString()
+  @IsOptional()
+  nama?: string;
 
-    @ApiProperty({ example: '081234567890', required: false })
-    @IsString()
-    @IsOptional()
-    @MaxLength(20)
-    noTelp?: string;
+  @IsString()
+  @IsOptional()
+  no_telepon?: string; // Menghilangkan error no_telepon
+
+  @IsString()
+  @IsOptional()
+  role?: string; // Menghilangkan error role
+
+  @IsString()
+  @IsOptional()
+  status?: string; // Menghilangkan error status
 }
