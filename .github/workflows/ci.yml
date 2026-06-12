@@ -17,24 +17,28 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Sesuaikan dengan versi Node yang kamu pakai
+        node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci # atau npm install jika kamu tidak pakai package-lock.json ketat
+      run: npm ci
 
-    # --- TAMBAHKAN DUA LANGKAH INI SEBELUM RUN TEST / BUILD ---
     - name: Cache Prisma Client
       uses: actions/cache@v4
       with:
         path: node_modules/.prisma
         key: ${{ runner.os }}-prisma-${{ hashFiles('**/schema.prisma') }}
 
+    # UPDATE 1: Menambahkan env dummy agar proses generator Prisma 7 tidak crash di server CI
     - name: Generate Prisma Client
+      env:
+        DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
       run: npx prisma generate
-    # ----------------------------------------------------------
 
+    # UPDATE 2: Menambahkan env dummy juga di sini karena pengujian unit test biasanya memuat modul PrismaService
     - name: Run unit tests
+      env:
+        DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
       run: npm run test
 
     - name: Build application
