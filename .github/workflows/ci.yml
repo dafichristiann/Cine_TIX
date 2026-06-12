@@ -1,6 +1,5 @@
 name: CI NestJS
 
-# Workflow dijalankan saat ada push atau pull request ke branch main dan dev
 on:
   push:
     branches: [ main, dev ]
@@ -12,20 +11,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout kode
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Sesuaikan dengan versi Node yang kamu pakai
+        cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci # atau npm install jika kamu tidak pakai package-lock.json ketat
 
-      - name: Build aplikasi
-        run: npm run build
+    # --- TAMBAHKAN DUA LANGKAH INI SEBELUM RUN TEST / BUILD ---
+    - name: Cache Prisma Client
+      uses: actions/cache@v4
+      with:
+        path: node_modules/.prisma
+        key: ${{ runner.os }}-prisma-${{ hashFiles('**/schema.prisma') }}
 
-      - name: Jalankan unit test
-        run: npm run test
+    - name: Generate Prisma Client
+      run: npx prisma generate
+    # ----------------------------------------------------------
+
+    - name: Run unit tests
+      run: npm run test
+
+    - name: Build application
+      run: npm run build
