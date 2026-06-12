@@ -1,11 +1,11 @@
 name: CI NestJS
 
-# Workflow dijalankan saat ada push atau pull request ke branch main
+# Workflow dijalankan saat ada push atau pull request ke branch main dan dev
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   build-and-test:
