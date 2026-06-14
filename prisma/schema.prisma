@@ -1,0 +1,101 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Pengguna {
+  id_pengguna    Int      @id @default(autoincrement())
+  email          String   @unique
+  password       String   // Tambahkan ini
+  nama           String?
+  no_telepon     String?  // Tambahkan ini
+  role           String   @default("user")
+  status         String   @default("active") // Tambahkan ini
+  tanggal_daftar DateTime @default(now())   // Tambahkan ini
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Pemesanan {
+  id_pemesanan   Int      @id @default(autoincrement())
+
+  id_pengguna    Int
+  pengguna       Pengguna @relation(fields: [id_pengguna], references: [id_pengguna])
+
+  id_jadwal      Int
+  jadwal         Jadwal   @relation(fields: [id_jadwal], references: [id_jadwal])
+
+  tgl_pesan      DateTime @default(now())
+
+  total_harga    Decimal  @db.Decimal(10,2)
+
+  status         BookingStatus @default(PENDING)
+
+  kode_booking   String   @unique
+
+  expired_at     DateTime
+
+  jumlah_tiket   Int
+
+  detail         DetailPemesanan[]
+
+  pembayaran     Pembayaran?
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+
+model DetailPemesanan {
+  id_detail      Int @id @default(autoincrement())
+
+  id_pemesanan   Int
+  pemesanan      Pemesanan @relation(fields:[id_pemesanan], references:[id_pemesanan])
+
+  id_slot        Int
+  slot           SlotKursi @relation(fields:[id_slot], references:[id_slot])
+
+  harga_satuan   Decimal @db.Decimal(10,2)
+
+  kode_tiket     String @unique
+
+  qr_url         String?
+
+  created_at     DateTime @default(now())
+}
+
+model Pembayaran {
+  id_pembayaran Int @id @default(autoincrement())
+
+  id_pemesanan  Int @unique
+  pemesanan     Pemesanan @relation(fields:[id_pemesanan], references:[id_pemesanan])
+
+  id_pengguna   Int
+  pengguna      Pengguna @relation(fields:[id_pengguna], references:[id_pengguna])
+
+  metode        String
+
+  jumlah        Decimal @db.Decimal(10,2)
+
+  tgl_bayar     DateTime @default(now())
+
+  status        PaymentStatus @default(PENDING)
+
+  ref_gateway   String?
+
+  created_at    DateTime @default(now())
+}
+
+enum BookingStatus {
+  PENDING
+  LUNAS
+  BATAL
+}
+
+enum PaymentStatus {
+  PENDING
+  BERHASIL
+  GAGAL
+}
