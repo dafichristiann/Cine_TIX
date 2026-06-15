@@ -17,6 +17,119 @@ model Pengguna {
   tanggal_daftar DateTime @default(now())   // Tambahkan ini
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  pemesanan Pemesanan[]
+  pembayaran Pembayaran[]
+}
+
+model Bioskop {
+  id_bioskop    Int      @id @default(autoincrement())
+  nama_bioskop  String
+  kota          String
+  alamat        String
+  telepon       String
+
+  studios       Studio[]
+}
+
+model Studio {
+  id_studio      Int      @id @default(autoincrement())
+
+  id_bioskop     Int
+
+  nama_studio    String
+  kapasitas      Int
+  tipe           String
+  lantai         Int
+
+  bioskop        Bioskop  @relation(fields: [id_bioskop], references: [id_bioskop])
+
+  kursi          Kursi[]
+  jadwal         Jadwal[]
+}
+
+model Film {
+  id_film        Int      @id @default(autoincrement())
+
+  judul          String
+  genre          String
+
+  durasi         Int
+
+  rating         String
+
+  sinopsis       String
+
+  poster_url     String?
+
+  tanggal_rilis  DateTime
+
+  bahasa         String
+
+  status         String @default("tidak_tayang")
+
+  createdAt      DateTime @default(now())
+
+  updatedAt      DateTime @updatedAt
+
+  jadwal Jadwal[]
+}
+
+model Kursi {
+
+  id_kursi      Int @id @default(autoincrement())
+
+  id_studio     Int
+
+  nomor_kursi   String
+
+  baris         String
+
+  tipe_kursi    String
+
+  studio Studio @relation(fields: [id_studio], references: [id_studio])
+
+  slot SlotKursi[]
+}
+
+model Jadwal {
+
+  id_jadwal    Int @id @default(autoincrement())
+
+  id_film      Int
+  id_studio    Int
+
+  tanggal      DateTime
+
+  jam_mulai    String
+  jam_selesai  String
+
+  harga        Decimal
+
+  film Film @relation(fields: [id_film], references: [id_film])
+
+  studio Studio @relation(fields: [id_studio], references: [id_studio])
+
+  slots SlotKursi[]
+  pemesanan Pemesanan[]
+}
+
+model SlotKursi {
+
+  id_slot Int @id @default(autoincrement())
+
+  id_jadwal Int
+  id_kursi Int
+
+  status String
+
+  locked_until DateTime?
+
+  jadwal Jadwal @relation(fields: [id_jadwal], references: [id_jadwal])
+
+  kursi Kursi @relation(fields: [id_kursi], references: [id_kursi])
+
+  detail DetailPemesanan[]
 }
 
 model Pemesanan {
