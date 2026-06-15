@@ -14,7 +14,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         connectionString: process.env.DATABASE_URL,
       });
     }
-    
     const adapter = new PrismaPg(PrismaService.pool);
     
     // Kirim objek adapter ke instance utama PrismaClient
