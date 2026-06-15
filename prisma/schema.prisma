@@ -21,6 +21,7 @@ model Pengguna {
 
   pemesanan Pemesanan[]
   pembayaran Pembayaran[]
+  notifikasi Notifikasi[]
 }
 
 model Bioskop {
@@ -131,6 +132,9 @@ model SlotKursi {
   kursi Kursi @relation(fields: [id_kursi], references: [id_kursi])
 
   detail DetailPemesanan[]
+
+  @@index([id_jadwal])
+  @@index([id_kursi])
 }
 
 model Pemesanan {
@@ -160,6 +164,9 @@ model Pemesanan {
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
+
+  @@index([id_pengguna])
+  @@index([id_jadwal])
 }
 
 model DetailPemesanan {
@@ -197,9 +204,44 @@ model Pembayaran {
 
   status        PaymentStatus @default(PENDING)
 
-  ref_gateway   String?
+  ref_gateway   String? @unique
 
   created_at    DateTime @default(now())
+
+  @@index([id_pengguna])
+}
+
+model TicketValidation {
+
+  id              Int @id @default(autoincrement())
+
+  kode_tiket      String @unique
+
+  is_used         Boolean @default(false)
+
+  used_at         DateTime?
+
+  created_at      DateTime @default(now())
+}
+
+model Notifikasi {
+
+  id_notifikasi Int @id @default(autoincrement())
+
+  id_pengguna Int
+
+  pengguna Pengguna @relation(
+    fields:[id_pengguna],
+    references:[id_pengguna]
+  )
+
+  pesan String
+
+  tipe String
+
+  sudah_dibaca Boolean @default(false)
+
+  created_at DateTime @default(now())
 }
 
 enum BookingStatus {
@@ -212,4 +254,10 @@ enum PaymentStatus {
   PENDING
   BERHASIL
   GAGAL
+}
+
+enum NotifType {
+  EMAIL
+  PUSH
+  SMS
 }
