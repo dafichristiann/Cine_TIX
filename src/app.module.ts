@@ -11,6 +11,7 @@ import { BioskopModule } from './bioskop/bioskop.module';
 import { StudioModule } from './studio/studio.module';
 import { KursiModule } from './kursi/kursi.module';
 import { JadwalModule } from './jadwal/jadwal.module';
+import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { JadwalModule } from './jadwal/jadwal.module';
     StudioModule,
     KursiModule,
     JadwalModule,
+    SlotKursiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
