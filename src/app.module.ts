@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { PenggunaModule } from './pengguna/pengguna.module';
 import { FilmModule } from './film/film.module';
+import { BioskopModule } from './bioskop/bioskop.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FilmModule } from './film/film.module';
     PrismaModule,
     PenggunaModule,
     FilmModule,
+    BioskopModule,
   ],
   controllers: [AppController],
   providers: [AppService],
