@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PenggunaModule } from './pengguna/pengguna.module';
 import { FilmModule } from './film/film.module';
 import { BioskopModule } from './bioskop/bioskop.module';
+import { StudioModule } from './studio/studio.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { BioskopModule } from './bioskop/bioskop.module';
     PenggunaModule,
     FilmModule,
     BioskopModule,
+    StudioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
