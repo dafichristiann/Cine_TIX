@@ -9,6 +9,7 @@ import { PenggunaModule } from './pengguna/pengguna.module';
 import { FilmModule } from './film/film.module';
 import { BioskopModule } from './bioskop/bioskop.module';
 import { StudioModule } from './studio/studio.module';
+import { KursiModule } from './kursi/kursi.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StudioModule } from './studio/studio.module';
     FilmModule,
     BioskopModule,
     StudioModule,
+    KursiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
