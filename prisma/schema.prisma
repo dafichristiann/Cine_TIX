@@ -119,7 +119,7 @@ model SlotKursi {
   id_jadwal Int
   id_kursi  Int
 
-  status String
+  status SlotStatus
 
   locked_until DateTime?
 
@@ -131,8 +131,6 @@ model SlotKursi {
 
   @@index([id_jadwal])
   @@index([id_kursi])
-
-  status SlotStatus
 }
 
 model Pemesanan {
@@ -207,25 +205,6 @@ model Pembayaran {
   created_at DateTime @default(now())
 
   @@index([id_pengguna])
-}
-
-model TicketValidation {
-
-  id Int @id @default(autoincrement())
-
-  id_detail Int @unique
-
-  detail DetailPemesanan
-    @relation(
-      fields:[id_detail],
-      references:[id_detail]
-    )
-
-  is_used Boolean @default(false)
-
-  used_at DateTime?
-
-  created_at DateTime @default(now())
 }
 
 model Notifikasi {
