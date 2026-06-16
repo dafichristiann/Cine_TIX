@@ -13,6 +13,7 @@ import { StudioModule } from './studio/studio.module';
 import { KursiModule } from './kursi/kursi.module';
 import { JadwalModule } from './jadwal/jadwal.module';
 import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
+import { PembayaranModule } from './pembayaran/pembayaran.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
     KursiModule,
     JadwalModule,
     SlotKursiModule,
+    PembayaranModule,
   ],
   controllers: [AppController],
   providers: [AppService],
