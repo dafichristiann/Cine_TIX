@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -10,84 +9,83 @@ generator client {
 model Pengguna {
   id_pengguna    Int      @id @default(autoincrement())
   email          String   @unique
-  password       String   // Tambahkan ini
+  password       String // Tambahkan ini
   nama           String?
-  no_telepon     String?  // Tambahkan ini
+  no_telepon     String? // Tambahkan ini
   role           String   @default("user")
   status         String   @default("active") // Tambahkan ini
-  tanggal_daftar DateTime @default(now())   // Tambahkan ini
+  tanggal_daftar DateTime @default(now()) // Tambahkan ini
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  pemesanan Pemesanan[]
+  pemesanan  Pemesanan[]
   pembayaran Pembayaran[]
   notifikasi Notifikasi[]
 }
 
 model Bioskop {
-  id_bioskop    Int      @id @default(autoincrement())
-  nama_bioskop  String
-  kota          String
-  alamat        String
-  telepon       String
+  id_bioskop   Int    @id @default(autoincrement())
+  nama_bioskop String
+  kota         String
+  alamat       String
+  telepon      String
 
-  studios       Studio[]
+  studios Studio[]
 }
 
 model Studio {
-  id_studio      Int      @id @default(autoincrement())
+  id_studio Int @id @default(autoincrement())
 
-  id_bioskop     Int
+  id_bioskop Int
 
-  nama_studio    String
-  kapasitas      Int
-  tipe           String
-  lantai         Int
+  nama_studio String
+  kapasitas   Int
+  tipe        String
+  lantai      Int
 
-  bioskop        Bioskop  @relation(fields: [id_bioskop], references: [id_bioskop])
+  bioskop Bioskop @relation(fields: [id_bioskop], references: [id_bioskop])
 
-  kursi          Kursi[]
-  jadwal         Jadwal[]
+  kursi  Kursi[]
+  jadwal Jadwal[]
 }
 
 model Film {
-  id_film        Int      @id @default(autoincrement())
+  id_film Int @id @default(autoincrement())
 
-  judul          String
-  genre          String
+  judul String
+  genre String
 
-  durasi         Int
+  durasi Int
 
-  rating         String
+  rating String
 
-  sinopsis       String
+  sinopsis String
 
-  poster_url     String?
+  poster_url String?
 
-  tanggal_rilis  DateTime
+  tanggal_rilis DateTime
 
-  bahasa         String
+  bahasa String
 
-  status         String @default("tidak_tayang")
+  status String @default("tidak_tayang")
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt      DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   jadwal Jadwal[]
 }
 
 model Kursi {
+  id_kursi Int @id @default(autoincrement())
 
-  id_kursi      Int @id @default(autoincrement())
+  id_studio Int
 
-  id_studio     Int
+  nomor_kursi String
 
-  nomor_kursi   String
+  baris String
 
-  baris         String
-
-  tipe_kursi    String
+  tipe_kursi String
 
   studio Studio @relation(fields: [id_studio], references: [id_studio])
 
@@ -95,33 +93,31 @@ model Kursi {
 }
 
 model Jadwal {
+  id_jadwal Int @id @default(autoincrement())
 
-  id_jadwal    Int @id @default(autoincrement())
+  id_film   Int
+  id_studio Int
 
-  id_film      Int
-  id_studio    Int
+  tanggal DateTime
 
-  tanggal      DateTime
+  jam_mulai   String
+  jam_selesai String
 
-  jam_mulai    String
-  jam_selesai  String
-
-  harga        Decimal
+  harga Decimal
 
   film Film @relation(fields: [id_film], references: [id_film])
 
   studio Studio @relation(fields: [id_studio], references: [id_studio])
 
-  slots SlotKursi[]
+  slots     SlotKursi[]
   pemesanan Pemesanan[]
 }
 
 model SlotKursi {
-
   id_slot Int @id @default(autoincrement())
 
   id_jadwal Int
-  id_kursi Int
+  id_kursi  Int
 
   status String
 
@@ -138,106 +134,101 @@ model SlotKursi {
 }
 
 model Pemesanan {
-  id_pemesanan   Int      @id @default(autoincrement())
+  id_pemesanan Int @id @default(autoincrement())
 
-  id_pengguna    Int
-  pengguna       Pengguna @relation(fields: [id_pengguna], references: [id_pengguna])
+  id_pengguna Int
+  pengguna    Pengguna @relation(fields: [id_pengguna], references: [id_pengguna])
 
-  id_jadwal      Int
-  jadwal         Jadwal   @relation(fields: [id_jadwal], references: [id_jadwal])
+  id_jadwal Int
+  jadwal    Jadwal @relation(fields: [id_jadwal], references: [id_jadwal])
 
-  tgl_pesan      DateTime @default(now())
+  tgl_pesan DateTime @default(now())
 
-  total_harga    Decimal  @db.Decimal(10,2)
+  total_harga Decimal @db.Decimal(10, 2)
 
-  status         BookingStatus @default(PENDING)
+  status BookingStatus @default(PENDING)
 
-  kode_booking   String   @unique
+  kode_booking String @unique
 
-  expired_at     DateTime
+  expired_at DateTime
 
-  jumlah_tiket   Int
+  jumlah_tiket Int
 
-  detail         DetailPemesanan[]
+  detail DetailPemesanan[]
 
-  pembayaran     Pembayaran?
+  pembayaran Pembayaran?
 
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([id_pengguna])
   @@index([id_jadwal])
 }
 
 model DetailPemesanan {
-  id_detail      Int @id @default(autoincrement())
+  id_detail Int @id @default(autoincrement())
 
-  id_pemesanan   Int
-  pemesanan      Pemesanan @relation(fields:[id_pemesanan], references:[id_pemesanan])
+  id_pemesanan Int
+  pemesanan    Pemesanan @relation(fields: [id_pemesanan], references: [id_pemesanan])
 
-  id_slot        Int
-  slot           SlotKursi @relation(fields:[id_slot], references:[id_slot])
+  id_slot Int
+  slot    SlotKursi @relation(fields: [id_slot], references: [id_slot])
 
-  harga_satuan   Decimal @db.Decimal(10,2)
+  harga_satuan Decimal @db.Decimal(10, 2)
 
-  kode_tiket     String @unique
+  kode_tiket String @unique
 
-  qr_url         String?
+  qr_url String?
 
-  created_at     DateTime @default(now())
+  created_at DateTime @default(now())
 }
 
 model Pembayaran {
   id_pembayaran Int @id @default(autoincrement())
 
-  id_pemesanan  Int @unique
-  pemesanan     Pemesanan @relation(fields:[id_pemesanan], references:[id_pemesanan])
+  id_pemesanan Int       @unique
+  pemesanan    Pemesanan @relation(fields: [id_pemesanan], references: [id_pemesanan])
 
-  id_pengguna   Int
-  pengguna      Pengguna @relation(fields:[id_pengguna], references:[id_pengguna])
+  id_pengguna Int
+  pengguna    Pengguna @relation(fields: [id_pengguna], references: [id_pengguna])
 
-  metode        String
+  metode String
 
-  jumlah        Decimal @db.Decimal(10,2)
+  jumlah Decimal @db.Decimal(10, 2)
 
-  tgl_bayar     DateTime @default(now())
+  tgl_bayar DateTime @default(now())
 
-  status        PaymentStatus @default(PENDING)
+  status PaymentStatus @default(PENDING)
 
-  ref_gateway   String? @unique
+  ref_gateway String? @unique
 
-  created_at    DateTime @default(now())
+  created_at DateTime @default(now())
 
   @@index([id_pengguna])
 }
 
 model TicketValidation {
+  id Int @id @default(autoincrement())
 
-  id              Int @id @default(autoincrement())
+  kode_tiket String @unique
 
-  kode_tiket      String @unique
+  is_used Boolean @default(false)
 
-  is_used         Boolean @default(false)
+  used_at DateTime?
 
-  used_at         DateTime?
-
-  created_at      DateTime @default(now())
+  created_at DateTime @default(now())
 }
 
 model Notifikasi {
-
   id_notifikasi Int @id @default(autoincrement())
 
   id_pengguna Int
 
-  pengguna Pengguna @relation(
-    fields:[id_pengguna],
-    references:[id_pengguna]
-  )
+  pengguna Pengguna @relation(fields: [id_pengguna], references: [id_pengguna])
 
   pesan String
 
-  tipe String
+  tipe NotifType
 
   sudah_dibaca Boolean @default(false)
 
