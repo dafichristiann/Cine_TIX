@@ -14,6 +14,7 @@ import { KursiModule } from './kursi/kursi.module';
 import { JadwalModule } from './jadwal/jadwal.module';
 import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
 import { PembayaranModule } from './pembayaran/pembayaran.module';
+import { NotifikasiModule } from './notifikasi/notifikasi.module';  
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PembayaranModule } from './pembayaran/pembayaran.module';
     JadwalModule,
     SlotKursiModule,
     PembayaranModule,
+    NotifikasiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
