@@ -17,13 +17,17 @@ export class PemesananService {
         private jadwalService: JadwalService,
       ) {}
 
-  generateKodeBooking(): string {
-    return `BK-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 4).toUpperCase()}`;
-  }
-
-  generateKodeTiket(): string {
-    return `TK-${uuidv4().slice(0, 8).toUpperCase()}`;
-  }
+      generateKodeBooking(): string {
+        return `BK-${Date.now().toString(36).toUpperCase()}-${uuidv4()
+          .slice(0, 4)
+          .toUpperCase()}`;
+      }
+      
+      generateKodeTiket(): string {
+        return `TK-${uuidv4()
+          .slice(0, 8)
+          .toUpperCase()}`;
+      }
 
   async create(
     dto: CreatePemesananDto,
@@ -35,9 +39,9 @@ export class PemesananService {
         dto.id_jadwal,
       );
   
-    await this.slotService.lockSlots(
-      dto.id_slots,
-    );
+      await this.slotService.lockSlots({
+        id_slots: dto.id_slots,
+      });
   
     const total_harga =
       Number(jadwal.harga) *
@@ -50,43 +54,32 @@ export class PemesananService {
   
     try {
   
-      const result =
-        await this.prisma.$transaction(
-          async (tx) => {
-  
-            const pemesanan =
-              await tx.pemesanan.create({
-                data: {
-                  id_pengguna,
-                  id_jadwal: dto.id_jadwal,
-                  total_harga,
-                  kode_booking:
-                    this.generateKodeBooking(),
-                  expired_at,
-                  jumlah_tiket:
-                    dto.id_slots.length,
-                  status: 'PENDING',
-                },
-              });
-  
-            await tx.detailPemesanan.createMany({
-              data:
-                dto.id_slots.map(
-                  (slotId) => ({
-                    id_pemesanan:
-                      pemesanan.id_pemesanan,
-                    id_slot: slotId,
-                    harga_satuan:
-                      jadwal.harga,
-                    kode_tiket:
-                      this.generateKodeTiket(),
-                  }),
-                ),
-            });
-  
-            return pemesanan;
-          },
-        );
+      const result = await this.prisma.$transaction(
+        async (tx) => {
+          const pemesanan = await tx.pemesanan.create({
+            data: {
+              id_pengguna,
+              id_jadwal: dto.id_jadwal,
+              total_harga,
+              kode_booking: this.generateKodeBooking(),
+              expired_at,
+              jumlah_tiket: dto.id_slots.length,
+              status: 'PENDING',
+            },
+          });
+      
+          await tx.detailPemesanan.createMany({
+            data: dto.id_slots.map((slotId) => ({
+              id_pemesanan: pemesanan.id_pemesanan,
+              id_slot: slotId,
+              harga_satuan: Number(jadwal.harga),
+              kode_tiket: this.generateKodeTiket(),
+            })),
+          });
+      
+          return pemesanan;
+        },
+      );
   
       await this.notifService.kirim({
         id_pengguna,
@@ -151,7 +144,6 @@ export class PemesananService {
   }
 
   async findOne(id: number) {
-
     const data =
       await this.prisma.pemesanan.findUnique({
         where: {
@@ -159,11 +151,18 @@ export class PemesananService {
         },
         include: {
           pengguna: true,
+  
           jadwal: {
             include: {
               film: true,
+              studio: {
+                include: {
+                  bioskop: true,
+                },
+              },
             },
           },
+  
           detail: {
             include: {
               slot: {
@@ -173,6 +172,7 @@ export class PemesananService {
               },
             },
           },
+  
           pembayaran: true,
         },
       });
