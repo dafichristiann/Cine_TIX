@@ -101,9 +101,9 @@ export class PemesananService {
   
     } catch (error) {
   
-      await this.slotService.releaseSlots(
-        dto.id_slots,
-      );
+      await this.slotService.releaseSlots({
+        id_slots: dto.id_slots,
+      });
   
       throw error;
     }
@@ -131,9 +131,9 @@ export class PemesananService {
         (d) => d.id_slot,
       );
   
-    await this.slotService.releaseSlots(
-      ids_slot,
-    );
+      await this.slotService.releaseSlots({
+        id_slots: ids_slot,
+      });
   
     await this.prisma.pemesanan.update({
       where: {
