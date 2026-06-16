@@ -4,6 +4,28 @@ CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'LUNAS', 'BATAL');
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'BERHASIL', 'GAGAL');
 
+-- CreateEnum
+CREATE TYPE "NotifType" AS ENUM ('EMAIL', 'PUSH', 'SMS');
+
+-- CreateEnum
+CREATE TYPE "SlotStatus" AS ENUM ('TERSEDIA', 'TERKUNCI', 'TERJUAL');
+
+-- CreateTable
+CREATE TABLE "Pengguna" (
+    "id_pengguna" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "nama" TEXT,
+    "no_telepon" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'user',
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "tanggal_daftar" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Pengguna_pkey" PRIMARY KEY ("id_pengguna")
+);
+
 -- CreateTable
 CREATE TABLE "Bioskop" (
     "id_bioskop" SERIAL NOT NULL,
@@ -74,7 +96,7 @@ CREATE TABLE "SlotKursi" (
     "id_slot" SERIAL NOT NULL,
     "id_jadwal" INTEGER NOT NULL,
     "id_kursi" INTEGER NOT NULL,
-    "status" TEXT NOT NULL,
+    "status" "SlotStatus" NOT NULL,
     "locked_until" TIMESTAMP(3),
 
     CONSTRAINT "SlotKursi_pkey" PRIMARY KEY ("id_slot")
@@ -125,14 +147,47 @@ CREATE TABLE "Pembayaran" (
     CONSTRAINT "Pembayaran_pkey" PRIMARY KEY ("id_pembayaran")
 );
 
+-- CreateTable
+CREATE TABLE "Notifikasi" (
+    "id_notifikasi" SERIAL NOT NULL,
+    "id_pengguna" INTEGER NOT NULL,
+    "pesan" TEXT NOT NULL,
+    "tipe" "NotifType" NOT NULL,
+    "sudah_dibaca" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notifikasi_pkey" PRIMARY KEY ("id_notifikasi")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Pengguna_email_key" ON "Pengguna"("email");
+
+-- CreateIndex
+CREATE INDEX "SlotKursi_id_jadwal_idx" ON "SlotKursi"("id_jadwal");
+
+-- CreateIndex
+CREATE INDEX "SlotKursi_id_kursi_idx" ON "SlotKursi"("id_kursi");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Pemesanan_kode_booking_key" ON "Pemesanan"("kode_booking");
+
+-- CreateIndex
+CREATE INDEX "Pemesanan_id_pengguna_idx" ON "Pemesanan"("id_pengguna");
+
+-- CreateIndex
+CREATE INDEX "Pemesanan_id_jadwal_idx" ON "Pemesanan"("id_jadwal");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "DetailPemesanan_kode_tiket_key" ON "DetailPemesanan"("kode_tiket");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Pembayaran_id_pemesanan_key" ON "Pembayaran"("id_pemesanan");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Pembayaran_ref_gateway_key" ON "Pembayaran"("ref_gateway");
+
+-- CreateIndex
+CREATE INDEX "Pembayaran_id_pengguna_idx" ON "Pembayaran"("id_pengguna");
 
 -- AddForeignKey
 ALTER TABLE "Studio" ADD CONSTRAINT "Studio_id_bioskop_fkey" FOREIGN KEY ("id_bioskop") REFERENCES "Bioskop"("id_bioskop") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -169,3 +224,6 @@ ALTER TABLE "Pembayaran" ADD CONSTRAINT "Pembayaran_id_pemesanan_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "Pembayaran" ADD CONSTRAINT "Pembayaran_id_pengguna_fkey" FOREIGN KEY ("id_pengguna") REFERENCES "Pengguna"("id_pengguna") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notifikasi" ADD CONSTRAINT "Notifikasi_id_pengguna_fkey" FOREIGN KEY ("id_pengguna") REFERENCES "Pengguna"("id_pengguna") ON DELETE RESTRICT ON UPDATE CASCADE;
