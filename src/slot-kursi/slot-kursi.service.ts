@@ -54,6 +54,40 @@ export class SlotKursiService {
     return slot;
   }
 
+  async konfirmasiSlots(id_slots: number[]) {
+
+    await this.prisma.slotKursi.updateMany({
+      where: {
+        id_slot: {
+          in: id_slots,
+        },
+      },
+      data: {
+        status: 'TERJUAL',
+        locked_until: null,
+      },
+    });
+  
+    return {
+      message:
+        `${id_slots.length} kursi berhasil dikonfirmasi`,
+    };
+  }
+
+  async getKursiTersedia(
+    id_jadwal: number,
+  ) {
+  
+    return this.prisma.slotKursi.findMany({
+      where: {
+        id_jadwal,
+        status: 'TERSEDIA',
+      },
+      include: {
+        kursi: true,
+      },
+    });
+  }
   // Lock kursi sementara (saat user mulai memilih kursi)
   async lockSlots(dto: LockSlotKursiDto) {
     const slots = await this.prisma.slotKursi.findMany({
