@@ -210,9 +210,16 @@ model Pembayaran {
 }
 
 model TicketValidation {
+
   id Int @id @default(autoincrement())
 
-  kode_tiket String @unique
+  id_detail Int @unique
+
+  detail DetailPemesanan
+    @relation(
+      fields:[id_detail],
+      references:[id_detail]
+    )
 
   is_used Boolean @default(false)
 
