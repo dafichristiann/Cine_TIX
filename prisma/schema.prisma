@@ -131,6 +131,8 @@ model SlotKursi {
 
   @@index([id_jadwal])
   @@index([id_kursi])
+
+  status SlotStatus
 }
 
 model Pemesanan {
@@ -251,4 +253,10 @@ enum NotifType {
   EMAIL
   PUSH
   SMS
+}
+
+enum SlotStatus {
+  TERSEDIA
+  TERKUNCI
+  TERJUAL
 }
