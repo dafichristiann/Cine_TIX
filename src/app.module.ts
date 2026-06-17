@@ -1,3 +1,4 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -15,13 +16,14 @@ import { JadwalModule } from './jadwal/jadwal.module';
 import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
 import { PembayaranModule } from './pembayaran/pembayaran.module';
 import { NotifikasiModule } from './notifikasi/notifikasi.module';  
+import { AuthModule } from './auth/auth.module'; // 👈 TAMBAHKAN IMPORT INI
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
+AuthModule,
     PrismaModule,
     PenggunaModule,
     FilmModule,
@@ -33,6 +35,7 @@ import { NotifikasiModule } from './notifikasi/notifikasi.module';
     SlotKursiModule,
     PembayaranModule,
     NotifikasiModule,
+     // 👈 DAFTARKAN DI SINI
   ],
   controllers: [AppController],
   providers: [AppService],

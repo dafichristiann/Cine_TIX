@@ -1,19 +1,27 @@
-import { Controller, Post, Body } from '@nestjs/common';
+// src/auth/auth.controller.ts
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'; // 👈 Pastikan Body dari @nestjs/common
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @ApiOperation({ summary: 'Registrasi pengguna baru' })
+  @ApiBody({ type: RegisterDto })
+  async register(@Body() registerDto: RegisterDto) { // 👈 @Body() harus seperti ini
+    return this.authService.register(registerDto);
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login pengguna' })
+  @ApiBody({ type: LoginDto })
+  async login(@Body() loginDto: LoginDto) { // 👈 @Body() harus seperti ini
+    return this.authService.login(loginDto);
   }
 }
