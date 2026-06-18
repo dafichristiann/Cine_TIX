@@ -219,4 +219,14 @@ export class PemesananService {
       },
     });
   }
+
+  async findOneForUser(id: number, id_pengguna: number) {
+    const pemesanan = await this.findOne(id);
+
+    if (pemesanan.id_pengguna !== id_pengguna) {
+      throw new NotFoundException('Pemesanan tidak ditemukan');
+    }
+
+    return pemesanan;
+  }
 }

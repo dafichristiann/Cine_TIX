@@ -4,10 +4,14 @@ import {
     Get,
     Body,
     Param,
+    Req,
+    UseGuards,
   } from '@nestjs/common';
+  import { ApiBearerAuth } from '@nestjs/swagger';
   
   import { PemesananService } from './pemesanan.service';
   import { CreatePemesananDto } from './dto/create-pemesanan.dto';
+  import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
   
   @Controller('pemesanan')
   export class PemesananController {
@@ -16,23 +20,30 @@ import {
     ) {}
   
     @Post()
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     create(
       @Body()
       dto: CreatePemesananDto,
+      @Req() req: any,
     ) {
       return this.service.create(
         dto,
-        1,
+        req.user.id_pengguna,
       );
     }
   
     @Get(':id')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     findOne(
       @Param('id')
       id: string,
+      @Req() req: any,
     ) {
-      return this.service.findOne(
+      return this.service.findOneForUser(
         Number(id),
+        req.user.id_pengguna,
       );
     }
   }

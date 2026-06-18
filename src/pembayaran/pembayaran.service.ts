@@ -38,6 +38,12 @@ import {
           'Pemesanan tidak ditemukan',
         );
       }
+
+      if (pemesanan.id_pengguna !== id_pengguna) {
+        throw new NotFoundException(
+          'Pemesanan tidak ditemukan',
+        );
+      }
   
       if (pemesanan.status !== 'PENDING') {
         throw new BadRequestException(
