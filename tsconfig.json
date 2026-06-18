@@ -21,8 +21,16 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    
-    // 👇 Add this line (assuming you installed @types/jest)
-    "types": ["jest", "node"] 
-  }
+    "types": ["jest", "node"]
+  },
+
+  "include": [
+    "src/**/*"
+  ],
+
+  "exclude": [
+    "frontend",
+    "dist",
+    "node_modules"
+  ]
 }
