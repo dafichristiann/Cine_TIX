@@ -14,14 +14,15 @@ import { KursiModule } from './kursi/kursi.module';
 import { JadwalModule } from './jadwal/jadwal.module';
 import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
 import { PembayaranModule } from './pembayaran/pembayaran.module';
-import { NotifikasiModule } from './notifikasi/notifikasi.module';  
+import { NotifikasiModule } from './notifikasi/notifikasi.module'; 
+import { AuthModule } from './auth/auth.module'; // 👈 Pastikan ini diimpor 
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
+AuthModule,
     PrismaModule,
     PenggunaModule,
     FilmModule,

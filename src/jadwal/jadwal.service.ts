@@ -12,7 +12,7 @@ export class JadwalService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateJadwalDto) {
-    // Validasi film exist
+    // 1. Validasi film exist
     const film = await this.prisma.film.findUnique({
       where: { id_film: dto.id_film },
     });
@@ -20,7 +20,7 @@ export class JadwalService {
       throw new NotFoundException('Film tidak ditemukan');
     }
 
-    // Validasi studio exist
+    // 2. Validasi studio exist
     const studio = await this.prisma.studio.findUnique({
       where: { id_studio: dto.id_studio },
     });
@@ -28,7 +28,7 @@ export class JadwalService {
       throw new NotFoundException('Studio tidak ditemukan');
     }
 
-    // Validasi tidak ada jadwal bentrok di studio yang sama
+    // 3. Validasi tidak ada jadwal bentrok di studio yang sama
     const bentrok = await this.prisma.jadwal.findFirst({
       where: {
         id_studio: dto.id_studio,
@@ -51,34 +51,42 @@ export class JadwalService {
       );
     }
 
-    const jadwal = await this.prisma.jadwal.create({
-      data: {
-        ...dto,
-        tanggal: new Date(dto.tanggal),
-        harga: dto.harga,
-      },
-      include: {
-        film: true,
-        studio: { include: { bioskop: true } },
-      },
-    });
-
-    // Auto-generate SlotKursi untuk semua kursi di studio
-    const kursiList = await this.prisma.kursi.findMany({
-      where: { id_studio: dto.id_studio },
-    });
-
-    if (kursiList.length > 0) {
-      await this.prisma.slotKursi.createMany({
-        data: kursiList.map((kursi) => ({
-          id_jadwal: jadwal.id_jadwal,
-          id_kursi: kursi.id_kursi,
-          status: 'TERSEDIA',
-        })),
+    // 4. Jalankan Transaksi agar Jadwal dan SlotKursi terbuat utuh bersamaan
+    return this.prisma.$transaction(async (tx) => {
+      // A. Buat Jadwal
+      const jadwal = await tx.jadwal.create({
+        data: {
+          id_film: dto.id_film,
+          id_studio: dto.id_studio,
+          tanggal: new Date(dto.tanggal),
+          jam_mulai: dto.jam_mulai,
+          jam_selesai: dto.jam_selesai,
+          harga: dto.harga, // Prisma otomatis mapping string decimal ke Decimal postgres
+        },
+        include: {
+          film: true,
+          studio: { include: { bioskop: true } },
+        },
       });
-    }
 
-    return jadwal;
+      // B. Ambil semua kursi di studio tersebut
+      const kursiList = await tx.kursi.findMany({
+        where: { id_studio: dto.id_studio },
+      });
+
+      // C. Auto-generate SlotKursi
+      if (kursiList.length > 0) {
+        await tx.slotKursi.createMany({
+          data: kursiList.map((kursi) => ({
+            id_jadwal: jadwal.id_jadwal,
+            id_kursi: kursi.id_kursi,
+            status: 'TERSEDIA',
+          })),
+        });
+      }
+
+      return jadwal;
+    });
   }
 
   findAll() {
@@ -156,8 +164,12 @@ export class JadwalService {
     return this.prisma.jadwal.update({
       where: { id_jadwal: id },
       data: {
-        ...dto,
+        id_film: dto.id_film,
+        id_studio: dto.id_studio,
         tanggal: dto.tanggal ? new Date(dto.tanggal) : undefined,
+        jam_mulai: dto.jam_mulai,
+        jam_selesai: dto.jam_selesai,
+        harga: dto.harga,
       },
       include: {
         film: true,
@@ -169,13 +181,17 @@ export class JadwalService {
   async remove(id: number) {
     await this.findOne(id);
 
-    // Hapus semua SlotKursi terkait terlebih dahulu
-    await this.prisma.slotKursi.deleteMany({
-      where: { id_jadwal: id },
-    });
+    // Dibungkus transaksi agar proses penghapusan berantai aman
+    return this.prisma.$transaction(async (tx) => {
+      // Hapus semua SlotKursi terkait terlebih dahulu
+      await tx.slotKursi.deleteMany({
+        where: { id_jadwal: id },
+      });
 
-    return this.prisma.jadwal.delete({
-      where: { id_jadwal: id },
+      // Baru hapus jadwalnya
+      return tx.jadwal.delete({
+        where: { id_jadwal: id },
+      });
     });
   }
 }

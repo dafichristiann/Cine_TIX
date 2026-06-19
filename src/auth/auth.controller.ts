@@ -24,4 +24,4 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) { // 👈 @Body() harus seperti ini
     return this.authService.login(loginDto);
   }
-}
+} 
