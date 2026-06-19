@@ -1,3 +1,59 @@
+# CineTix
+
+Website pemesanan tiket bioskop berbasis React, NestJS, Prisma, dan PostgreSQL.
+
+## Menjalankan Project
+
+1. Install dependency backend dan frontend:
+
+```bash
+npm install
+cd frontend
+npm install
+cd ..
+```
+
+2. Pastikan PostgreSQL berjalan dan isi `.env` sudah sesuai.
+
+3. Jalankan migrasi dan seed data demo:
+
+```bash
+npx prisma migrate dev
+npm run seed
+```
+
+4. Jalankan backend:
+
+```bash
+npm run start:dev
+```
+
+5. Jalankan frontend di terminal lain:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend tersedia di `http://127.0.0.1:5173`, backend di `http://localhost:3000`, dan dokumentasi API di `http://localhost:3000/api/docs`.
+
+## Akun Demo
+
+- User: `user@cinetix.id` / `user123`
+- Admin: `admin@cinetix.id` / `admin123`
+
+## Flow Utama
+
+Pengguna bisa melihat daftar film, memilih jadwal, login atau register, memilih kursi, membuat pemesanan, lalu membuat pembayaran demo dengan status `PENDING`.
+
+## Fitur Tambahan
+
+- `Tiket Saya`: riwayat pesanan user, pembatalan pesanan pending, dan kode tiket untuk pesanan lunas.
+- Simulasi pembayaran berhasil: mengubah pembayaran menjadi `BERHASIL`, pemesanan menjadi `LUNAS`, dan kursi menjadi `TERJUAL`.
+- Admin dashboard sederhana: ringkasan data, tambah film, tambah jadwal, dan daftar jadwal terbaru.
+
+---
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

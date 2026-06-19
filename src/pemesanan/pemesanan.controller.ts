@@ -32,6 +32,29 @@ import {
         req.user.id_pengguna,
       );
     }
+
+    @Get()
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    findMine(@Req() req: any) {
+      return this.service.findByUser(
+        req.user.id_pengguna,
+      );
+    }
+
+    @Post(':id/batal')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    cancel(
+      @Param('id')
+      id: string,
+      @Req() req: any,
+    ) {
+      return this.service.batalkan(
+        Number(id),
+        req.user.id_pengguna,
+      );
+    }
   
     @Get(':id')
     @ApiBearerAuth()

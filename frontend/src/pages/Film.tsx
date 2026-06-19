@@ -31,7 +31,7 @@ export default function FilmList() {
       <section className="section">
         <div className="container">
           <div className="filter-bar">
-            <label className="search-box"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari judul film..." /></label>
+            <label className="search-box"><span>Cari</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari judul film..." /></label>
             <div className="genre-tabs">{genres.map((item) => <button className={genre === item ? 'active' : ''} type="button" onClick={() => setGenre(item)} key={item}>{item}</button>)}</div>
           </div>
           {error && <ErrorBanner message={error} />}

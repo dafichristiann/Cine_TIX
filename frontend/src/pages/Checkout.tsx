@@ -48,8 +48,26 @@ export default function Checkout() {
     try {
       const response = await api.post<Pembayaran>('/pembayaran', { id_pemesanan: booking.id_pemesanan, metode: method });
       setPayment(response.data);
+      const bookingResponse = await api.get<Pemesanan>(`/pemesanan/${booking.id_pemesanan}`);
+      setBooking(bookingResponse.data);
     } catch (requestError) {
       setError(getApiError(requestError, 'Pembayaran gagal dibuat.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmPayment = async () => {
+    if (!booking) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await api.post(`/pembayaran/${booking.id_pemesanan}/simulasi-berhasil`);
+      const bookingResponse = await api.get<Pemesanan>(`/pemesanan/${booking.id_pemesanan}`);
+      setBooking(bookingResponse.data);
+      setPayment(bookingResponse.data.pembayaran);
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Simulasi pembayaran gagal.'));
     } finally {
       setSubmitting(false);
     }
@@ -60,13 +78,13 @@ export default function Checkout() {
 
   return (
     <div className="booking-page checkout-page">
-      <div className="container booking-header"><Link className="back-link" to={`/kursi/${booking.jadwal.id_jadwal}`}>← Kembali</Link><div><span>Langkah 3 dari 3</span><strong>Pembayaran</strong></div></div>
+      <div className="container booking-header"><Link className="back-link" to={`/kursi/${booking.jadwal.id_jadwal}`}>&lt;- Kembali</Link><div><span>Langkah 3 dari 3</span><strong>Pembayaran</strong></div></div>
       <div className="container checkout-layout">
         <section className="payment-panel">
           <div className="checkout-heading"><p className="eyebrow">Selesaikan pesanan</p><h1>Pilih metode pembayaran</h1><p>Pesanan <strong>{booking.kode_booking}</strong> akan kedaluwarsa dalam <span className="countdown">{remaining || '--:--'}</span></p></div>
           {error && <ErrorBanner message={error} />}
           {payment ? (
-            <div className="payment-created"><span className="success-mark">✓</span><h2>Pembayaran berhasil dibuat</h2><p>Gunakan metode <strong>{payment.metode}</strong> untuk menyelesaikan pembayaran sebesar <strong>{formatCurrency(payment.jumlah)}</strong>.</p><div className="payment-status">Status pembayaran <span>{payment.status}</span></div><small>Integrasikan payment gateway pada webhook backend untuk mengubah status menjadi BERHASIL secara otomatis.</small><Link className="button button-secondary" to="/film">Cari film lainnya</Link></div>
+            <div className="payment-created"><span className="success-mark">OK</span><h2>{payment.status === 'BERHASIL' ? 'Pembayaran berhasil' : 'Pembayaran berhasil dibuat'}</h2><p>Gunakan metode <strong>{payment.metode}</strong> untuk menyelesaikan pembayaran sebesar <strong>{formatCurrency(payment.jumlah)}</strong>.</p><div className="payment-status">Status pembayaran <span>{payment.status}</span></div><small>Untuk demo, tombol simulasi akan mengubah status menjadi BERHASIL dan mengunci kursi sebagai TERJUAL.</small>{payment.status === 'PENDING' && <button className="button button-primary button-block" type="button" disabled={submitting || remaining === '00:00'} onClick={confirmPayment}>{submitting ? 'Memproses...' : 'Simulasi bayar berhasil'}</button>}<Link className="button button-secondary" to="/tiket-saya">Lihat tiket saya</Link></div>
           ) : (
             <div className="payment-methods">{paymentMethods.map((item) => (
               <label className={method === item.id ? 'payment-option active' : 'payment-option'} key={item.id}><input type="radio" name="payment" value={item.id} checked={method === item.id} onChange={() => setMethod(item.id)} /><span className="payment-icon">{item.icon}</span><span><strong>{item.label}</strong><small>{item.description}</small></span><i /></label>

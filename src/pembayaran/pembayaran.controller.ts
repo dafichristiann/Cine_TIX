@@ -50,6 +50,22 @@ import {
         req.user.id_pengguna,
       );
     }
+
+    @Post(':id_pemesanan/simulasi-berhasil')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    async simulasiBerhasil(
+      @Param('id_pemesanan', ParseIntPipe)
+      id_pemesanan: number,
+
+      @Req()
+      req: any,
+    ) {
+      return this.service.simulasiBerhasil(
+        id_pemesanan,
+        req.user.id_pengguna,
+      );
+    }
   
     @Post('webhook')
     async webhook(

@@ -22,6 +22,8 @@ export default function Layout() {
           <nav className={menuOpen ? 'main-nav is-open' : 'main-nav'}>
             <NavLink to="/" end onClick={closeMenu}>Beranda</NavLink>
             <NavLink to="/film" onClick={closeMenu}>Film</NavLink>
+            {isAuthenticated && <NavLink to="/tiket-saya" onClick={closeMenu}>Tiket Saya</NavLink>}
+            {user?.role?.toLowerCase() === 'admin' && <NavLink to="/admin" onClick={closeMenu}>Admin</NavLink>}
             <a href="/#cara-pesan" onClick={closeMenu}>Cara Pesan</a>
             {isAuthenticated ? (
               <div className="user-menu">
@@ -48,7 +50,7 @@ export default function Layout() {
           <div><strong>Navigasi</strong><Link to="/film">Film</Link><a href="/#cara-pesan">Cara pesan</a></div>
           <div><strong>Bantuan</strong><a href="mailto:support@cinetix.id">support@cinetix.id</a><span>Setiap hari, 09.00 - 22.00</span></div>
         </div>
-        <div className="container footer-bottom">© {new Date().getFullYear()} CineTix. Dibuat untuk pengalaman nonton terbaik.</div>
+        <div className="container footer-bottom">(c) {new Date().getFullYear()} CineTix. Dibuat untuk pengalaman nonton terbaik.</div>
       </footer>
     </div>
   );

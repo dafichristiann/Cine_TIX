@@ -33,7 +33,7 @@ export default function Jadwal() {
       <section className="movie-detail-hero">
         <div className="container detail-grid">
           <div className="detail-poster">{film && <PosterImage film={film} />}</div>
-          <div><Link className="back-link" to="/film">← Kembali ke film</Link><p className="eyebrow">{film?.genre}</p><h1>{film?.judul}</h1><div className="detail-meta"><span>{film?.rating}</span><span>{film?.durasi} menit</span><span>{film?.bahasa}</span></div><p className="synopsis">{film?.sinopsis}</p></div>
+          <div><Link className="back-link" to="/film">&lt;- Kembali ke film</Link><p className="eyebrow">{film?.genre}</p><h1>{film?.judul}</h1><div className="detail-meta"><span>{film?.rating}</span><span>{film?.durasi} menit</span><span>{film?.bahasa}</span></div><p className="synopsis">{film?.sinopsis}</p></div>
         </div>
       </section>
       <section className="section schedule-section">
@@ -44,7 +44,7 @@ export default function Jadwal() {
               <div className="schedule-date"><strong>{formatDate(date, { weekday: 'long' })}</strong><span>{formatDate(date, { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
               <div className="cinema-list">{items.map((schedule) => (
                 <article className="cinema-row" key={schedule.id_jadwal}>
-                  <div><h3>{schedule.studio.bioskop.nama_bioskop}</h3><p>{schedule.studio.bioskop.kota} · {schedule.studio.nama_studio} · {schedule.studio.tipe}</p></div>
+                  <div><h3>{schedule.studio.bioskop.nama_bioskop}</h3><p>{schedule.studio.bioskop.kota} / {schedule.studio.nama_studio} / {schedule.studio.tipe}</p></div>
                   <div className="showtime-info"><div><strong>{schedule.jam_mulai}</strong><small>sampai {schedule.jam_selesai}</small></div><span>{formatCurrency(schedule.harga)}</span><Link className="button button-primary button-small" to={`/kursi/${schedule.id_jadwal}`}>Pilih kursi</Link></div>
                 </article>
               ))}</div>

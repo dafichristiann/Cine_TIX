@@ -7,12 +7,17 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 import { JadwalService } from './jadwal.service';
 import { CreateJadwalDto } from './dto/create-jadwal.dto';
 import { UpdateJadwalDto } from './dto/update-jadwal.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @ApiTags('Jadwal')
 @Controller('jadwal')
@@ -20,6 +25,8 @@ export class JadwalController {
   constructor(private readonly jadwalService: JadwalService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Tambah jadwal tayang baru' })
   create(@Body() dto: CreateJadwalDto) {
     return this.jadwalService.create(dto);
@@ -45,12 +52,16 @@ export class JadwalController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update jadwal' })
   update(@Param('id') id: string, @Body() dto: UpdateJadwalDto) {
     return this.jadwalService.update(+id, dto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Hapus jadwal beserta slot kursinya' })
   remove(@Param('id') id: string) {
     return this.jadwalService.remove(+id);

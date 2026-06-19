@@ -65,10 +65,10 @@ export default function Kursi() {
 
   return (
     <div className="booking-page">
-      <div className="container booking-header"><Link className="back-link" to={`/jadwal/${schedule?.id_film || ''}`}>← Ganti jadwal</Link><div><span>Langkah 2 dari 3</span><strong>Pilih kursi</strong></div></div>
+      <div className="container booking-header"><Link className="back-link" to={`/jadwal/${schedule?.id_film || ''}`}>&lt;- Ganti jadwal</Link><div><span>Langkah 2 dari 3</span><strong>Pilih kursi</strong></div></div>
       <div className="container seat-layout">
         <section className="seat-panel">
-          <div className="seat-title"><div><p className="eyebrow">{schedule?.studio.bioskop.nama_bioskop}</p><h1>{schedule?.film.judul}</h1><p>{schedule && formatDate(schedule.tanggal)} · {schedule?.jam_mulai} · {schedule?.studio.nama_studio}</p></div></div>
+          <div className="seat-title"><div><p className="eyebrow">{schedule?.studio.bioskop.nama_bioskop}</p><h1>{schedule?.film.judul}</h1><p>{schedule && formatDate(schedule.tanggal)} / {schedule?.jam_mulai} / {schedule?.studio.nama_studio}</p></div></div>
           {error && <ErrorBanner message={error} />}
           <div className="screen-wrap"><div className="screen" /><span>LAYAR BIOSKOP</span></div>
           {(schedule?.slots || []).length ? <div className="seats-area">
@@ -86,8 +86,8 @@ export default function Kursi() {
           <p className="eyebrow">Ringkasan pesanan</p><h2>{schedule?.film.judul}</h2>
           <dl><div><dt>Bioskop</dt><dd>{schedule?.studio.bioskop.nama_bioskop}</dd></div><div><dt>Jadwal</dt><dd>{schedule?.jam_mulai}</dd></div><div><dt>Studio</dt><dd>{schedule?.studio.nama_studio}</dd></div></dl>
           <div className="selected-seats"><span>Kursi pilihan</span>{selectedSlots.length ? <div>{selectedSlots.map((slot) => <strong key={slot.id_slot}>{slot.kursi.nomor_kursi}</strong>)}</div> : <p>Belum ada kursi dipilih</p>}</div>
-          <div className="price-line"><span>{selected.length} tiket × {formatCurrency(schedule?.harga || 0)}</span><strong>{formatCurrency(total)}</strong></div>
-          <button className="button button-primary button-block" type="button" disabled={!selected.length || submitting} onClick={createBooking}>{submitting ? 'Memproses...' : 'Lanjut ke pembayaran'} <span>→</span></button>
+          <div className="price-line"><span>{selected.length} tiket x {formatCurrency(schedule?.harga || 0)}</span><strong>{formatCurrency(total)}</strong></div>
+          <button className="button button-primary button-block" type="button" disabled={!selected.length || submitting} onClick={createBooking}>{submitting ? 'Memproses...' : 'Lanjut ke pembayaran'} <span>-&gt;</span></button>
           <small className="summary-note">Kursi akan dikunci selama 15 menit setelah pesanan dibuat.</small>
         </aside>
       </div>

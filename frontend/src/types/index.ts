@@ -28,12 +28,16 @@ export interface Bioskop {
   nama_bioskop: string;
   kota: string;
   alamat: string;
+  telepon?: string;
 }
 
 export interface Studio {
   id_studio: number;
+  id_bioskop?: number;
   nama_studio: string;
+  kapasitas?: number;
   tipe: string;
+  lantai?: number;
   bioskop: Bioskop;
 }
 

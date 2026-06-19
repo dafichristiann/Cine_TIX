@@ -50,6 +50,16 @@ import {
           'Pemesanan sudah tidak pending',
         );
       }
+
+      const pembayaranLama = await this.prisma.pembayaran.findUnique({
+        where: {
+          id_pemesanan: dto.id_pemesanan,
+        },
+      });
+
+      if (pembayaranLama) {
+        return pembayaranLama;
+      }
   
       if (new Date() > pemesanan.expired_at) {
         throw new BadRequestException(
@@ -174,6 +184,78 @@ import {
         message:
           'Webhook diproses',
       };
+    }
+
+    async simulasiBerhasil(
+      id_pemesanan: number,
+      id_pengguna: number,
+    ) {
+      const bayar = await this.prisma.pembayaran.findUnique({
+        where: {
+          id_pemesanan,
+        },
+        include: {
+          pemesanan: {
+            include: {
+              detail: true,
+            },
+          },
+        },
+      });
+
+      if (!bayar || bayar.id_pengguna !== id_pengguna) {
+        throw new NotFoundException(
+          'Data pembayaran tidak ditemukan',
+        );
+      }
+
+      if (bayar.status === 'BERHASIL') {
+        return bayar;
+      }
+
+      if (bayar.pemesanan.status !== 'PENDING') {
+        throw new BadRequestException(
+          'Pemesanan sudah tidak pending',
+        );
+      }
+
+      if (new Date() > bayar.pemesanan.expired_at) {
+        throw new BadRequestException(
+          'Pemesanan sudah expired',
+        );
+      }
+
+      const pembayaran = await this.prisma.pembayaran.update({
+        where: {
+          id_pembayaran: bayar.id_pembayaran,
+        },
+        data: {
+          status: 'BERHASIL',
+        },
+      });
+
+      await this.prisma.pemesanan.update({
+        where: {
+          id_pemesanan,
+        },
+        data: {
+          status: 'LUNAS',
+        },
+      });
+
+      await this.slotService.konfirmasiSlots(
+        bayar.pemesanan.detail.map((detail) => detail.id_slot),
+      );
+
+      await this.notifService.kirim({
+        id_pengguna,
+        id_pemesanan,
+        pesan:
+          'Pembayaran demo berhasil! Tiket Anda sudah dapat digunakan.',
+        tipe: 'EMAIL',
+      });
+
+      return pembayaran;
     }
   
     async refund(

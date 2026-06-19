@@ -36,10 +36,10 @@ export default function Home() {
             <h1>Cerita besar dimulai dari <em>satu kursi.</em></h1>
             <p>Temukan film terbaru, pilih jadwal yang pas, dan amankan kursi favoritmu dalam hitungan menit.</p>
             <div className="hero-actions">
-              <Link className="button button-primary" to="/film">Pesan tiket sekarang <span>→</span></Link>
+              <Link className="button button-primary" to="/film">Pesan tiket sekarang <span>-&gt;</span></Link>
               <a className="button button-ghost" href="#sedang-tayang">Lihat film</a>
             </div>
-            <div className="hero-trust"><span>✓ Tanpa biaya tersembunyi</span><span>✓ Kursi real-time</span></div>
+            <div className="hero-trust"><span>OK Tanpa biaya tersembunyi</span><span>OK Kursi real-time</span></div>
           </div>
           <div className="hero-visual">
             <div className="ticket-card">
@@ -62,7 +62,7 @@ export default function Home() {
         <div className="container">
           <div className="section-heading">
             <div><p className="eyebrow">Pilihan terbaik</p><h2>Sedang tayang</h2><p>Film yang siap menemani waktu terbaikmu.</p></div>
-            <Link className="text-link" to="/film">Lihat semua film →</Link>
+            <Link className="text-link" to="/film">Lihat semua film -&gt;</Link>
           </div>
           {error && <ErrorBanner message={error} />}
           {loading ? <LoadingState label="Menyiapkan film terbaik..." /> : (
@@ -75,15 +75,15 @@ export default function Home() {
         <div className="container">
           <div className="center-heading"><p className="eyebrow">Mudah dan cepat</p><h2>Tiga langkah menuju layar lebar</h2></div>
           <div className="steps-grid">
-            <article><span className="step-number">01</span><div className="step-icon">⌕</div><h3>Pilih film & jadwal</h3><p>Temukan film favorit dan waktu tayang yang sesuai dengan harimu.</p></article>
-            <article><span className="step-number">02</span><div className="step-icon">▦</div><h3>Tentukan kursi</h3><p>Lihat ketersediaan real-time dan pilih posisi menonton ternyaman.</p></article>
-            <article><span className="step-number">03</span><div className="step-icon">✓</div><h3>Bayar & nikmati</h3><p>Selesaikan pembayaran dan tiket digitalmu langsung siap digunakan.</p></article>
+            <article><span className="step-number">01</span><div className="step-icon">1</div><h3>Pilih film & jadwal</h3><p>Temukan film favorit dan waktu tayang yang sesuai dengan harimu.</p></article>
+            <article><span className="step-number">02</span><div className="step-icon">2</div><h3>Tentukan kursi</h3><p>Lihat ketersediaan real-time dan pilih posisi menonton ternyaman.</p></article>
+            <article><span className="step-number">03</span><div className="step-icon">3</div><h3>Bayar & nikmati</h3><p>Selesaikan pembayaran dan tiket digitalmu langsung siap digunakan.</p></article>
           </div>
         </div>
       </section>
 
       <section className="section cta-section">
-        <div className="container cta-card"><div><p className="eyebrow">Waktunya menikmati cerita</p><h2>Film bagus tidak suka menunggu.</h2><p>Pilih kursimu sebelum diambil penonton lain.</p></div><Link className="button button-light" to="/film">Jelajahi film →</Link></div>
+        <div className="container cta-card"><div><p className="eyebrow">Waktunya menikmati cerita</p><h2>Film bagus tidak suka menunggu.</h2><p>Pilih kursimu sebelum diambil penonton lain.</p></div><Link className="button button-light" to="/film">Jelajahi film -&gt;</Link></div>
       </section>
     </>
   );

@@ -50,6 +50,20 @@ export class PemesananService {
       await this.jadwalService.findOne(
         dto.id_jadwal,
       );
+
+      const slotJadwalIds = new Set(
+        jadwal.slots.map((slot) => slot.id_slot),
+      );
+
+      const adaSlotBedaJadwal = dto.id_slots.some(
+        (slotId) => !slotJadwalIds.has(slotId),
+      );
+
+      if (adaSlotBedaJadwal) {
+        throw new BadRequestException(
+          'Satu atau lebih kursi tidak sesuai dengan jadwal yang dipilih',
+        );
+      }
   
       await this.slotService.lockSlots({
         id_slots: dto.id_slots,
@@ -102,7 +116,7 @@ export class PemesananService {
         tipe: NotifType.PUSH,
       });
   
-      return result;
+      return this.findOneForUser(result.id_pemesanan, id_pengguna);
   
     } catch (error) {
   
@@ -130,6 +144,12 @@ export class PemesananService {
         'Bukan pemesanan Anda',
       );
     }
+
+    if (pemesanan.status !== 'PENDING') {
+      throw new BadRequestException(
+        'Hanya pemesanan pending yang dapat dibatalkan',
+      );
+    }
   
     const ids_slot =
       pemesanan.detail.map(
@@ -148,11 +168,19 @@ export class PemesananService {
         status: 'BATAL',
       },
     });
+
+    if (pemesanan.pembayaran?.status === 'PENDING') {
+      await this.prisma.pembayaran.update({
+        where: {
+          id_pemesanan: id,
+        },
+        data: {
+          status: 'GAGAL',
+        },
+      });
+    }
   
-    return {
-      message:
-        'Pemesanan berhasil dibatalkan',
-    };
+    return this.findOneForUser(id, id_pengguna);
   }
 
   async findOne(id: number) {
@@ -210,9 +238,23 @@ export class PemesananService {
         jadwal: {
           include: {
             film: true,
+            studio: {
+              include: {
+                bioskop: true,
+              },
+            },
           },
         },
-        detail: true,
+        detail: {
+          include: {
+            slot: {
+              include: {
+                kursi: true,
+              },
+            },
+          },
+        },
+        pembayaran: true,
       },
       orderBy: {
         tgl_pesan: 'desc',
