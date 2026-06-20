@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFilmDto } from './dto/create-film.dto';
 import { UpdateFilmDto } from './dto/update-film.dto';
@@ -63,6 +63,10 @@ export class FilmService {
 
   async remove(id: number) {
     await this.findOne(id);
+    const scheduleCount = await this.prisma.jadwal.count({ where: { id_film: id } });
+    if (scheduleCount) {
+      throw new BadRequestException('Film yang masih memiliki jadwal tidak dapat dihapus');
+    }
 
     return this.prisma.film.delete({
       where: {

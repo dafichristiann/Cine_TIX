@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateBioskopDto } from './dto/create-bioskop.dto';
@@ -53,6 +53,10 @@ export class BioskopService {
 
   async remove(id: number) {
     await this.findOne(id);
+    const studioCount = await this.prisma.studio.count({ where: { id_bioskop: id } });
+    if (studioCount) {
+      throw new BadRequestException('Bioskop yang masih memiliki studio tidak dapat dihapus');
+    }
 
     return this.prisma.bioskop.delete({
       where: {

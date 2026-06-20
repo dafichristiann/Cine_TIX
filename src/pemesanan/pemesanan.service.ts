@@ -2,6 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  OnModuleDestroy,
+  OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -21,13 +24,87 @@ import { JadwalService } from '../jadwal/jadwal.service';
 import { CreatePemesananDto } from './dto/create-pemesanan.dto';
 
 @Injectable()
-export class PemesananService {
+export class PemesananService implements OnModuleInit, OnModuleDestroy {
+    private expiryTimer?: NodeJS.Timeout;
+    private expiryInProgress = false;
+    private readonly logger = new Logger(PemesananService.name);
+
     constructor(
         private prisma: PrismaService,
         private slotService: SlotKursiService,
         private notifService: NotifikasiService,
         private jadwalService: JadwalService,
       ) {}
+
+  onModuleInit() {
+    void this.runExpirySafely();
+    this.expiryTimer = setInterval(() => {
+      void this.runExpirySafely();
+    }, 60_000);
+    this.expiryTimer.unref();
+  }
+
+  onModuleDestroy() {
+    if (this.expiryTimer) clearInterval(this.expiryTimer);
+  }
+
+  private async runExpirySafely() {
+    try {
+      await this.expirePendingBookings();
+    } catch (error) {
+      this.logger.error('Gagal memproses pesanan kedaluwarsa', error);
+    }
+  }
+
+  async expirePendingBookings(now = new Date()) {
+    if (this.expiryInProgress) return { count: 0 };
+    this.expiryInProgress = true;
+
+    try {
+      const expired = await this.prisma.pemesanan.findMany({
+      where: { status: 'PENDING', expired_at: { lte: now } },
+      select: {
+        id_pemesanan: true,
+        detail: { select: { id_slot: true } },
+        pembayaran: { select: { status: true } },
+      },
+    });
+
+      for (const booking of expired) {
+        await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.pemesanan.updateMany({
+          where: {
+            id_pemesanan: booking.id_pemesanan,
+            status: 'PENDING',
+            expired_at: { lte: now },
+          },
+          data: { status: 'BATAL' },
+        });
+
+        if (!updated.count) return;
+
+        await tx.slotKursi.updateMany({
+          where: {
+            id_slot: { in: booking.detail.map((detail) => detail.id_slot) },
+            status: 'TERKUNCI',
+          },
+          data: { status: 'TERSEDIA', locked_until: null },
+        });
+
+        if (booking.pembayaran?.status === 'PENDING') {
+          await tx.pembayaran.update({
+            where: { id_pemesanan: booking.id_pemesanan },
+            data: { status: 'GAGAL' },
+          });
+        }
+        });
+      }
+
+      return { count: expired.length };
+    } finally {
+      this.expiryInProgress = false;
+    }
+  }
 
       generateKodeBooking(): string {
         return `BK-${Date.now().toString(36).toUpperCase()}-${uuidv4()

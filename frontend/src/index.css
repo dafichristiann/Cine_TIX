@@ -157,6 +157,21 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .schedule-table { margin-top: 24px; }
 .table-row { display: grid; grid-template-columns: 1.4fr .8fr .7fr .7fr .7fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); align-items: center; font-size: .76rem; }
 .table-row span { color: var(--muted); }
+.admin-tabs { display: flex; gap: 6px; margin: 25px 0; border-bottom: 1px solid var(--line); }
+.admin-tabs button { padding: 13px 18px; border: 0; border-bottom: 3px solid transparent; color: var(--muted); background: transparent; cursor: pointer; font-weight: 750; }
+.admin-tabs button.active { border-color: var(--purple); color: var(--purple); }
+.admin-workspace { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 24px; align-items: start; }
+.admin-location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.admin-list-wide { grid-column: 1 / -1; }
+.admin-list article { padding: 15px 0; display: flex; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); }
+.admin-list article > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.admin-list article > div:last-child { display: flex; align-items: flex-start; gap: 10px; }
+.admin-list span, .admin-list small { color: var(--muted); font-size: .7rem; line-height: 1.5; }
+.admin-list button { padding: 3px; border: 0; color: var(--purple); background: transparent; cursor: pointer; font-size: .7rem; font-weight: 750; }
+.admin-list .danger-link { color: var(--danger); }
+.form-actions { display: flex; gap: 10px; }
+.form-actions .button { flex: 1; }
+.form-hint { margin: -3px 0 14px; color: var(--muted); font-size: .68rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 980px) {
@@ -175,7 +190,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .seat-panel, .payment-panel { padding: 22px 16px; }.seat-layout, .checkout-layout { width: min(100% - 20px, 1160px); }.seat-legend { gap: 12px; flex-wrap: wrap; }.booking-header { min-height: 65px; }.footer-grid { grid-template-columns: 1fr; gap: 28px; }.footer-bottom { text-align: center; }
   .auth-form-wrap { padding: 35px 15px; }.auth-card { padding: 27px 20px; }.form-row { grid-template-columns: 1fr; gap: 0; }
   .ticket-item { grid-template-columns: 1fr; padding: 20px; }.ticket-main dl { grid-template-columns: 1fr 1fr; }.ticket-actions { justify-content: stretch; }
-  .admin-stats, .admin-grid { grid-template-columns: 1fr; }.table-row { grid-template-columns: 1fr; gap: 5px; }
+  .admin-stats, .admin-grid, .admin-workspace, .admin-location-grid { grid-template-columns: 1fr; }.admin-list-wide { grid-column: auto; }.table-row { grid-template-columns: 1fr; gap: 5px; }
 }
 
 @media (max-width: 480px) {

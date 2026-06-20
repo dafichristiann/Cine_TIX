@@ -39,6 +39,7 @@ export interface Studio {
   tipe: string;
   lantai?: number;
   bioskop: Bioskop;
+  kursi?: Kursi[];
 }
 
 export interface Kursi {

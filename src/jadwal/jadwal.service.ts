@@ -137,7 +137,7 @@ export class JadwalService {
   }
 
   async update(id: number, dto: UpdateJadwalDto) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
 
     if (dto.id_film) {
       const film = await this.prisma.film.findUnique({
@@ -153,21 +153,57 @@ export class JadwalService {
       if (!studio) throw new NotFoundException('Studio tidak ditemukan');
     }
 
-    return this.prisma.jadwal.update({
-      where: { id_jadwal: id },
-      data: {
-        ...dto,
-        tanggal: dto.tanggal ? new Date(dto.tanggal) : undefined,
+    const nextStudioId = dto.id_studio ?? current.id_studio;
+    const nextDate = dto.tanggal ? new Date(dto.tanggal) : current.tanggal;
+    const nextStart = dto.jam_mulai ?? current.jam_mulai;
+    const nextEnd = dto.jam_selesai ?? current.jam_selesai;
+    const conflict = await this.prisma.jadwal.findFirst({
+      where: {
+        id_jadwal: { not: id },
+        id_studio: nextStudioId,
+        tanggal: nextDate,
+        jam_mulai: { lt: nextEnd },
+        jam_selesai: { gt: nextStart },
       },
-      include: {
-        film: true,
-        studio: { include: { bioskop: true } },
-      },
+    });
+    if (conflict) throw new BadRequestException('Jadwal bertabrakan dengan jadwal lain di studio ini');
+
+    const bookingCount = await this.prisma.pemesanan.count({ where: { id_jadwal: id } });
+    if (dto.id_studio && dto.id_studio !== current.id_studio && bookingCount) {
+      throw new BadRequestException('Studio tidak dapat diganti karena jadwal sudah memiliki pemesanan');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const schedule = await tx.jadwal.update({
+        where: { id_jadwal: id },
+        data: { ...dto, tanggal: dto.tanggal ? nextDate : undefined },
+      });
+
+      if (dto.id_studio && dto.id_studio !== current.id_studio) {
+        await tx.slotKursi.deleteMany({ where: { id_jadwal: id } });
+        const seats = await tx.kursi.findMany({ where: { id_studio: dto.id_studio } });
+        await tx.slotKursi.createMany({
+          data: seats.map((seat) => ({
+            id_jadwal: id,
+            id_kursi: seat.id_kursi,
+            status: 'TERSEDIA',
+          })),
+        });
+      }
+
+      return tx.jadwal.findUniqueOrThrow({
+        where: { id_jadwal: schedule.id_jadwal },
+        include: { film: true, studio: { include: { bioskop: true } } },
+      });
     });
   }
 
   async remove(id: number) {
     await this.findOne(id);
+    const bookingCount = await this.prisma.pemesanan.count({ where: { id_jadwal: id } });
+    if (bookingCount) {
+      throw new BadRequestException('Jadwal yang memiliki riwayat pemesanan tidak dapat dihapus');
+    }
 
     // Hapus semua SlotKursi terkait terlebih dahulu
     await this.prisma.slotKursi.deleteMany({

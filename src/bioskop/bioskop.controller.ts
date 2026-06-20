@@ -6,11 +6,16 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 
 import { BioskopService } from './bioskop.service';
 import { CreateBioskopDto } from './dto/create-bioskop.dto';
 import { UpdateBioskopDto } from './dto/update-bioskop.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Controller('bioskop')
 export class BioskopController {
@@ -19,6 +24,8 @@ export class BioskopController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   create(
     @Body() dto: CreateBioskopDto,
   ) {
@@ -38,6 +45,8 @@ export class BioskopController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateBioskopDto,
@@ -49,6 +58,8 @@ export class BioskopController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   remove(
     @Param('id') id: string,
   ) {

@@ -90,6 +90,8 @@ model Kursi {
   studio Studio @relation(fields: [id_studio], references: [id_studio])
 
   slot SlotKursi[]
+
+  @@unique([id_studio, nomor_kursi])
 }
 
 model Jadwal {
@@ -131,6 +133,7 @@ model SlotKursi {
 
   @@index([id_jadwal])
   @@index([id_kursi])
+  @@unique([id_jadwal, id_kursi])
 }
 
 model Pemesanan {
