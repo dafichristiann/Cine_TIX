@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { getInitials } from '../lib/format';
 import { useAuth } from '../context/auth';
+import UserMenu from './UserMenu';
 
 export default function Layout() {
   const { user, isAuthenticated, signOut } = useAuth();
@@ -26,12 +27,7 @@ export default function Layout() {
             {user?.role?.toLowerCase() === 'admin' && <NavLink to="/admin" onClick={closeMenu}>Admin</NavLink>}
             <a href="/#cara-pesan" onClick={closeMenu}>Cara Pesan</a>
             {isAuthenticated ? (
-              <div className="user-menu">
-                <span className="avatar">{getInitials(user?.nama)}</span>
-                <div><strong>{user?.nama || 'Pengguna'}</strong><small>{user?.email}</small></div>
-                <Link className="link-button" to="/profil" onClick={closeMenu}>Profil Saya</Link>
-                <button type="button" className="link-button" onClick={() => { signOut(); closeMenu(); }}>Keluar</button>
-              </div>
+              <UserMenu />
             ) : (
               <div className="nav-actions">
                 <Link className="nav-login" to="/login" onClick={closeMenu}>Masuk</Link>

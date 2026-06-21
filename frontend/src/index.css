@@ -172,6 +172,33 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .form-actions { display: flex; gap: 10px; }
 .form-actions .button { flex: 1; }
 .form-hint { margin: -3px 0 14px; color: var(--muted); font-size: .68rem; }
+
+.user-menu-wrapper { position: relative; }
+.user-menu-toggle { padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; align-items: center; gap: 9px; }
+.user-menu-toggle .avatar { width: 35px; height: 35px; }
+.user-info-brief { display: flex; flex-direction: column; line-height: 1.25; text-align: left; }
+.user-info-brief strong { color: var(--ink); font-size: .78rem; }
+.user-info-brief small { color: var(--muted); font-size: .66rem; }
+.user-menu-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; min-width: 320px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 14px 35px rgba(27,18,42,.12); z-index: 40; }
+.user-profile-view { padding: 18px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
+.avatar-large { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: var(--purple-soft); color: var(--purple); font-size: .9rem; font-weight: 800; flex-shrink: 0; }
+.user-profile-view > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.user-profile-view strong { font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-profile-view small { color: var(--muted); font-size: .68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dropdown-link { display: block; width: 100%; padding: 12px 18px; border: 0; background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-size: .78rem; font-weight: 600; transition: .15s; }
+.dropdown-link:hover { background: #f9f7fc; }
+.dropdown-edit { color: var(--purple); }
+.dropdown-logout { color: var(--danger); border-top: 1px solid var(--line); }
+.user-menu-dropdown h3 { margin: 16px 18px 14px; font-size: .9rem; }
+.user-menu-dropdown .form-group { margin: 0 18px 14px; }
+.user-menu-dropdown label { display: flex; flex-direction: column; gap: 5px; }
+.user-menu-dropdown label span { color: #37313f; font-size: .65rem; font-weight: 700; }
+.user-menu-dropdown input { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #ddd8e3; border-radius: 8px; outline: 0; background: #fff; color: var(--ink); font-size: .78rem; }
+.user-menu-dropdown input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); }
+.user-menu-dropdown .alert { margin: 0 18px 14px; padding: 10px 12px; }
+.dropdown-actions { display: flex; gap: 8px; padding: 16px 18px 18px; border-top: 1px solid var(--line); }
+.dropdown-actions .button { flex: 1; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 980px) {
