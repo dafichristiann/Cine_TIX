@@ -29,6 +29,7 @@ export default function Layout() {
               <div className="user-menu">
                 <span className="avatar">{getInitials(user?.nama)}</span>
                 <div><strong>{user?.nama || 'Pengguna'}</strong><small>{user?.email}</small></div>
+                <Link className="link-button" to="/profil" onClick={closeMenu}>Profil Saya</Link>
                 <button type="button" className="link-button" onClick={() => { signOut(); closeMenu(); }}>Keluar</button>
               </div>
             ) : (

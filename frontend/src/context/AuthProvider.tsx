@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthResponse, User } from '../types';
 import { AuthContext } from './auth';
+import api from '../api/axios';
 
 const readStoredUser = (): User | null => {
   try {
@@ -16,6 +17,25 @@ const readStoredUser = (): User | null => {
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(readStoredUser);
 
+  const refreshAuth = useCallback(async () => {
+    try {
+      const response = await api.get('/pengguna/me');
+      const updatedUser = {
+        id: response.data.id_pengguna,
+        nama: response.data.nama,
+        email: response.data.email,
+        role: response.data.role,
+      };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch {
+      // Jika error, logout
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+    }
+  }, []);
+
   const value = useMemo(() => ({
     user,
     isAuthenticated: Boolean(user && localStorage.getItem('token')),
@@ -29,7 +49,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('user');
       setUser(null);
     },
-  }), [user]);
+    refreshAuth,
+  }), [user, refreshAuth]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
