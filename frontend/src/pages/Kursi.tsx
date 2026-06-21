@@ -21,10 +21,13 @@ export default function Kursi() {
       .finally(() => setLoading(false));
   }, [id_jadwal]);
 
-  const rows = useMemo(() => (schedule?.slots || []).reduce<Record<string, SlotKursi[]>>((result, slot) => {
-    result[slot.kursi.baris] = [...(result[slot.kursi.baris] || []), slot];
-    return result;
-  }, {}), [schedule]);
+  const rows = useMemo(() => {
+    const grouped = (schedule?.slots || []).reduce<Record<string, SlotKursi[]>>((result, slot) => {
+      result[slot.kursi.baris] = [...(result[slot.kursi.baris] || []), slot];
+      return result;
+    }, {});
+    return Object.fromEntries(Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)));
+  }, [schedule]);
 
   const selectedSlots = (schedule?.slots || []).filter((slot) => selected.includes(slot.id_slot));
   const total = Number(schedule?.harga || 0) * selected.length;
