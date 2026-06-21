@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { getInitials } from '../lib/format';
 import { useAuth } from '../context/auth';
 import UserMenu from './UserMenu';
 

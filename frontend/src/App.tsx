@@ -8,7 +8,6 @@ import Jadwal from './pages/Jadwal';
 import Kursi from './pages/Kursi';
 import Checkout from './pages/Checkout';
 import MyTickets from './pages/MyTickets';
-import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import Layout from './components/Layout';
 import AuthProvider from './context/AuthProvider';
@@ -50,7 +49,6 @@ function App() {
             <Route path="/kursi/:id_jadwal" element={<PrivateRoute><Kursi /></PrivateRoute>} />
             <Route path="/checkout/:id_pemesanan" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/tiket-saya" element={<PrivateRoute><MyTickets /></PrivateRoute>} />
-            <Route path="/profil" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Route>
