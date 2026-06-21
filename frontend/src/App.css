@@ -182,3 +182,47 @@
     border-right-color: var(--border);
   }
 }
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table thead tr {
+  border-bottom: 2px solid #ddd;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
+.admin-table tbody tr {
+  border-bottom: 1px solid #eee;
+}
+
+.admin-table td {
+  padding: 10px;
+  vertical-align: top;
+}
+
+.admin-table-strong {
+  font-size: 0.85rem;
+}
+
+.admin-table-sub {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 2px;
+}
+
+.admin-table-cell {
+  font-size: 0.85rem;
+}
+
+.admin-table-total {
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+

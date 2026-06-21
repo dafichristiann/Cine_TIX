@@ -348,4 +348,58 @@ export class PemesananService implements OnModuleInit, OnModuleDestroy {
 
     return pemesanan;
   }
+
+  async findAllAdmin(status?: string, search?: string) {
+    const where: any = {};
+
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { kode_booking: { contains: search, mode: 'insensitive' } },
+        { pengguna: { nama: { contains: search, mode: 'insensitive' } } },
+        { pengguna: { email: { contains: search, mode: 'insensitive' } } },
+        { jadwal: { film: { judul: { contains: search, mode: 'insensitive' } } } },
+      ];
+    }
+
+    return this.prisma.pemesanan.findMany({
+      where,
+      include: {
+        pengguna: {
+          select: {
+            id_pengguna: true,
+            nama: true,
+            email: true,
+            no_telepon: true,
+          },
+        },
+        jadwal: {
+          include: {
+            film: true,
+            studio: {
+              include: {
+                bioskop: true,
+              },
+            },
+          },
+        },
+        detail: {
+          include: {
+            slot: {
+              include: {
+                kursi: true,
+              },
+            },
+          },
+        },
+        pembayaran: true,
+      },
+      orderBy: {
+        tgl_pesan: 'desc',
+      },
+    });
+  }
 }

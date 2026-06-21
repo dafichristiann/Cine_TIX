@@ -9,6 +9,7 @@ import Kursi from './pages/Kursi';
 import Checkout from './pages/Checkout';
 import MyTickets from './pages/MyTickets';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminBookingHistory from './pages/AdminBookingHistory';
 import Layout from './components/Layout';
 import AuthProvider from './context/AuthProvider';
 import { useAuth } from './context/auth';
@@ -50,6 +51,7 @@ function App() {
             <Route path="/checkout/:id_pemesanan" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/tiket-saya" element={<PrivateRoute><MyTickets /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/riwayat-pemesanan" element={<AdminRoute><AdminBookingHistory /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

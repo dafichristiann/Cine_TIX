@@ -6,19 +6,23 @@ import {
     Param,
     Req,
     UseGuards,
+    Query,
   } from '@nestjs/common';
   import { ApiBearerAuth } from '@nestjs/swagger';
-  
+
   import { PemesananService } from './pemesanan.service';
   import { CreatePemesananDto } from './dto/create-pemesanan.dto';
   import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-  
+  import { RolesGuard } from '../common/guards/roles.guard';
+  import { Roles } from '../common/decorators/roles.decorator';
+  import { UserRole } from '../common/enums/user-role.enum';
+
   @Controller('pemesanan')
   export class PemesananController {
     constructor(
       private readonly service: PemesananService,
     ) {}
-  
+
     @Post()
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
@@ -42,6 +46,17 @@ import {
       );
     }
 
+    @Get('admin/all')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    findAll(
+      @Query('status') status?: string,
+      @Query('search') search?: string,
+    ) {
+      return this.service.findAllAdmin(status, search);
+    }
+
     @Post(':id/batal')
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
@@ -55,7 +70,7 @@ import {
         req.user.id_pengguna,
       );
     }
-  
+
     @Get(':id')
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)

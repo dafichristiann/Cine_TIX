@@ -95,3 +95,6 @@ export interface Pemesanan {
   detail: DetailPemesanan[];
   pembayaran: Pembayaran | null;
 }
+export interface PemesananAdmin extends Pemesanan {
+  pengguna: User;
+}

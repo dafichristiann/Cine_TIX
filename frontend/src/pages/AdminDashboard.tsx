@@ -4,8 +4,9 @@ import api, { getApiError } from '../api/axios';
 import { ErrorBanner, LoadingState } from '../components/Status';
 import { formatCurrency, formatDate } from '../lib/format';
 import type { Bioskop, Film, Jadwal, Studio } from '../types';
+import AdminBookingHistory from './AdminBookingHistory';
 
-type Section = 'film' | 'lokasi' | 'jadwal';
+type Section = 'film' | 'lokasi' | 'jadwal' | 'riwayat';
 
 const newFilm = () => ({
   judul: '', genre: '', durasi: '120', rating: 'R13+', sinopsis: '', poster_url: '',
@@ -130,6 +131,7 @@ export default function AdminDashboard() {
         <button className={section === 'film' ? 'active' : ''} onClick={() => { setSection('film'); cancelEdit(); }}>Film</button>
         <button className={section === 'lokasi' ? 'active' : ''} onClick={() => { setSection('lokasi'); cancelEdit(); }}>Bioskop & studio</button>
         <button className={section === 'jadwal' ? 'active' : ''} onClick={() => { setSection('jadwal'); cancelEdit(); }}>Jadwal</button>
+        <button className={section === 'riwayat' ? 'active' : ''} onClick={() => setSection('riwayat')}>Riwayat Pemesanan</button>
       </div>
 
       {section === 'film' && <div className="admin-workspace">
@@ -153,6 +155,8 @@ export default function AdminDashboard() {
         <form className="admin-panel admin-form" onSubmit={submitSchedule}><h2>{editing?.type === 'jadwal' ? 'Ubah jadwal' : 'Tambah jadwal'}</h2><label>Film<select value={scheduleForm.id_film} onChange={(e) => setScheduleForm({ ...scheduleForm, id_film: e.target.value })} required>{films.map((film) => <option value={film.id_film} key={film.id_film}>{film.judul}</option>)}</select></label><label>Studio<select value={scheduleForm.id_studio} onChange={(e) => setScheduleForm({ ...scheduleForm, id_studio: e.target.value })} required>{studios.map((studio) => <option value={studio.id_studio} key={studio.id_studio}>{studio.bioskop.nama_bioskop} - {studio.nama_studio}</option>)}</select></label><div className="form-row"><label>Tanggal<input type="date" value={scheduleForm.tanggal} onChange={(e) => setScheduleForm({ ...scheduleForm, tanggal: e.target.value })} required /></label><label>Harga<input value={scheduleForm.harga} onChange={(e) => setScheduleForm({ ...scheduleForm, harga: e.target.value })} required /></label></div><div className="form-row"><label>Mulai<input type="time" value={scheduleForm.jam_mulai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_mulai: e.target.value })} required /></label><label>Selesai<input type="time" value={scheduleForm.jam_selesai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_selesai: e.target.value })} required /></label></div><div className="form-actions"><button className="button button-primary" disabled={saving}>Simpan</button>{editing && <button type="button" className="button button-secondary" onClick={cancelEdit}>Batal</button>}</div></form>
         <div className="admin-panel admin-list"><h2>Daftar jadwal</h2>{schedules.map((item) => <article key={item.id_jadwal}><div><strong>{item.film.judul}</strong><span>{formatDate(item.tanggal)} · {item.jam_mulai}-{item.jam_selesai}</span><small>{item.studio.nama_studio} · {formatCurrency(item.harga)}</small></div><div><button onClick={() => { setEditing({ type: 'jadwal', id: item.id_jadwal }); setScheduleForm({ id_film: String(item.id_film), id_studio: String(item.id_studio), tanggal: item.tanggal.slice(0, 10), jam_mulai: item.jam_mulai, jam_selesai: item.jam_selesai, harga: String(item.harga) }); }}>Ubah</button><button className="danger-link" onClick={() => void remove('jadwal', item.id_jadwal, `jadwal ${item.film.judul}`)}>Hapus</button></div></article>)}</div>
       </div>}
+
+      {section === 'riwayat' && <AdminBookingHistory />}
     </div></section>
   </div>;
 }
