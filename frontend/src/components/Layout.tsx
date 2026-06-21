@@ -4,7 +4,7 @@ import { useAuth } from '../context/auth';
 import UserMenu from './UserMenu';
 
 export default function Layout() {
-  const { user, isAuthenticated, signOut } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
