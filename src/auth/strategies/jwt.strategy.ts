@@ -14,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Mengambil token JWT dari HTTP Header 'Authorization: Bearer <token>'
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('JWT_SECRET'),
+      secretOrKey: configService.get('JWT_SECRET') || 'default-secret-key',
     });
   }
 
