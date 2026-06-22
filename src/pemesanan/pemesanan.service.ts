@@ -402,4 +402,64 @@ export class PemesananService implements OnModuleInit, OnModuleDestroy {
       },
     });
   }
+
+  async remove(id: number) {
+    const pemesanan = await this.prisma.pemesanan.findUnique({
+      where: {
+        id_pemesanan: id,
+      },
+      include: {
+        detail: true,
+        pembayaran: true,
+      },
+    });
+
+    if (!pemesanan) {
+      throw new NotFoundException('Pemesanan tidak ditemukan');
+    }
+
+    const ids_slot = pemesanan.detail.map((d) => d.id_slot);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Delete detail pemesanan
+      await tx.detailPemesanan.deleteMany({
+        where: {
+          id_pemesanan: id,
+        },
+      });
+
+      // 2. Delete pembayaran if exists
+      if (pemesanan.pembayaran) {
+        await tx.pembayaran.delete({
+          where: {
+            id_pemesanan: id,
+          },
+        });
+      }
+
+      // 3. Delete pemesanan
+      await tx.pemesanan.delete({
+        where: {
+          id_pemesanan: id,
+        },
+      });
+
+      // 4. Release slots
+      if (ids_slot.length > 0) {
+        await tx.slotKursi.updateMany({
+          where: {
+            id_slot: {
+              in: ids_slot,
+            },
+          },
+          data: {
+            status: 'TERSEDIA',
+            locked_until: null,
+          },
+        });
+      }
+    });
+
+    return { message: 'Pemesanan berhasil dihapus' };
+  }
 }

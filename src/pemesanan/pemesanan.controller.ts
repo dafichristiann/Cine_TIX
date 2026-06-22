@@ -7,6 +7,7 @@ import {
     Req,
     UseGuards,
     Query,
+    Delete,
   } from '@nestjs/common';
   import { ApiBearerAuth } from '@nestjs/swagger';
 
@@ -83,5 +84,16 @@ import {
         Number(id),
         req.user.id_pengguna,
       );
+    }
+
+    @Delete(':id')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    remove(
+      @Param('id')
+      id: string,
+    ) {
+      return this.service.remove(Number(id));
     }
   }

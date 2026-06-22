@@ -54,6 +54,17 @@ export default function AdminBookingHistory() {
     };
   }, [loadBookings]);
 
+  const removeBooking = async (id: number, kodeBooking: string) => {
+    if (!window.confirm(`Hapus pemesanan ${kodeBooking}?`)) return;
+    setError('');
+    try {
+      await api.delete(`/pemesanan/${id}`);
+      void loadBookings();
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Gagal menghapus pemesanan.'));
+    }
+  };
+
   const stats = useMemo(() => {
     const total = bookings.length;
     const lunas = bookings.filter((b) => b.status === 'LUNAS').length;
@@ -122,12 +133,13 @@ export default function AdminBookingHistory() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
               <colgroup>
-                <col style={{ width: '16%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '18%' }} />
                 <col style={{ width: '20%' }} />
-                <col style={{ width: '22%' }} />
-                <col style={{ width: '16%' }} />
-                <col style={{ width: '13%' }} />
-                <col style={{ width: '13%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '10%' }} />
               </colgroup>
               <thead>
                 <tr style={{ borderBottom: '2px solid #ddd' }}>
@@ -137,6 +149,7 @@ export default function AdminBookingHistory() {
                   <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Tanggal</th>
                   <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Total</th>
                   <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,6 +191,23 @@ export default function AdminBookingHistory() {
                       >
                         {booking.status}
                       </span>
+                    </td>
+                    <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
+                      <button
+                        className="danger-link"
+                        onClick={() => void removeBooking(booking.id_pemesanan, booking.kode_booking)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '0.85rem',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Hapus
+                      </button>
                     </td>
                   </tr>
                 ))}
