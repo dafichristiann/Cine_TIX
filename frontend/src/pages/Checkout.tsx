@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api, { getApiError } from '../api/axios';
 import { ErrorBanner, LoadingState } from '../components/Status';
@@ -20,6 +20,13 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const sortedDetails = useMemo(() => {
+    if (!booking) return [];
+    return [...booking.detail].sort((a, b) =>
+      a.slot.kursi.nomor_kursi.localeCompare(b.slot.kursi.nomor_kursi, undefined, { numeric: true, sensitivity: 'base' })
+    );
+  }, [booking]);
 
   useEffect(() => {
     api.get<Pemesanan>(`/pemesanan/${id_pemesanan}`)
@@ -93,7 +100,7 @@ export default function Checkout() {
         </section>
         <aside className="booking-summary checkout-summary">
           <p className="eyebrow">Detail tiket</p><h2>{booking.jadwal.film.judul}</h2><dl><div><dt>Tanggal</dt><dd>{formatDate(booking.jadwal.tanggal, { day: 'numeric', month: 'short', year: 'numeric' })}</dd></div><div><dt>Waktu</dt><dd>{booking.jadwal.jam_mulai}</dd></div><div><dt>Bioskop</dt><dd>{booking.jadwal.studio.bioskop.nama_bioskop}</dd></div><div><dt>Studio</dt><dd>{booking.jadwal.studio.nama_studio}</dd></div></dl>
-          <div className="selected-seats"><span>Kursi</span><div>{booking.detail.map((detail) => <strong key={detail.id_detail}>{detail.slot.kursi.nomor_kursi}</strong>)}</div></div>
+          <div className="selected-seats"><span>Kursi</span><div>{sortedDetails.map((detail) => <strong key={detail.id_detail}>{detail.slot.kursi.nomor_kursi}</strong>)}</div></div>
           <div className="price-breakdown"><div><span>Subtotal ({booking.jumlah_tiket} tiket)</span><strong>{formatCurrency(booking.total_harga)}</strong></div><div><span>Biaya layanan</span><strong>Rp0</strong></div></div><div className="checkout-total"><span>Total pembayaran</span><strong>{formatCurrency(booking.total_harga)}</strong></div>
           {!payment && <button className="button button-primary button-block" type="button" disabled={submitting || remaining === '00:00'} onClick={createPayment}>{submitting ? 'Memproses...' : `Bayar ${formatCurrency(booking.total_harga)}`}</button>}
           <small className="summary-note">Pembayaran diproses dengan koneksi yang aman.</small>

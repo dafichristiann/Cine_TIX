@@ -43,11 +43,13 @@ export default function AdminDashboard() {
       ]);
       setFilms(filmRes.data); setSchedules(scheduleRes.data);
       setCinemas(cinemaRes.data); setStudios(studioRes.data);
-      setScheduleForm((value) => ({ ...value,
+      setScheduleForm((value) => ({
+        ...value,
         id_film: value.id_film || String(filmRes.data[0]?.id_film || ''),
         id_studio: value.id_studio || String(studioRes.data[0]?.id_studio || ''),
       }));
-      setStudioForm((value) => ({ ...value,
+      setStudioForm((value) => ({
+        ...value,
         id_bioskop: value.id_bioskop || String(cinemaRes.data[0]?.id_bioskop || ''),
       }));
     } catch (requestError) {
@@ -69,8 +71,10 @@ export default function AdminDashboard() {
   const submitFilm = async (event: FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
     try {
-      const payload = { ...filmForm, durasi: Number(filmForm.durasi), poster_url: filmForm.poster_url || undefined,
-        tanggal_rilis: new Date(filmForm.tanggal_rilis).toISOString() };
+      const payload = {
+        ...filmForm, durasi: Number(filmForm.durasi), poster_url: filmForm.poster_url || undefined,
+        tanggal_rilis: new Date(filmForm.tanggal_rilis).toISOString()
+      };
       if (editing?.type === 'film') await api.patch(`/film/${editing.id}`, payload);
       else await api.post('/film', payload);
       setFilmForm(newFilm()); await finish(editing ? 'Film berhasil diperbarui.' : 'Film berhasil ditambahkan.');
@@ -89,8 +93,10 @@ export default function AdminDashboard() {
   const submitStudio = async (event: FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
     try {
-      const payload = { ...studioForm, id_bioskop: Number(studioForm.id_bioskop),
-        kapasitas: Number(studioForm.kapasitas), lantai: Number(studioForm.lantai) };
+      const payload = {
+        ...studioForm, id_bioskop: Number(studioForm.id_bioskop),
+        kapasitas: Number(studioForm.kapasitas), lantai: Number(studioForm.lantai)
+      };
       if (editing?.type === 'studio') await api.patch(`/studio/${editing.id}`, payload);
       else await api.post('/studio', payload);
       setStudioForm(newStudio()); await finish(editing ? 'Studio dan kursinya berhasil diperbarui.' : 'Studio beserta kursinya berhasil dibuat.');
@@ -100,8 +106,10 @@ export default function AdminDashboard() {
   const submitSchedule = async (event: FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
     try {
-      const payload = { ...scheduleForm, id_film: Number(scheduleForm.id_film),
-        id_studio: Number(scheduleForm.id_studio), tanggal: new Date(scheduleForm.tanggal).toISOString() };
+      const payload = {
+        ...scheduleForm, id_film: Number(scheduleForm.id_film),
+        id_studio: Number(scheduleForm.id_studio), tanggal: new Date(scheduleForm.tanggal).toISOString()
+      };
       if (editing?.type === 'jadwal') await api.patch(`/jadwal/${editing.id}`, payload);
       else await api.post('/jadwal', payload);
       setScheduleForm(newSchedule()); await finish(editing ? 'Jadwal berhasil diperbarui.' : 'Jadwal dan slot kursinya berhasil dibuat.');
@@ -152,8 +160,8 @@ export default function AdminDashboard() {
       </div>}
 
       {section === 'jadwal' && <div className="admin-workspace">
-        <form className="admin-panel admin-form" onSubmit={submitSchedule}><h2>{editing?.type === 'jadwal' ? 'Ubah jadwal' : 'Tambah jadwal'}</h2><label>Film<select value={scheduleForm.id_film} onChange={(e) => setScheduleForm({ ...scheduleForm, id_film: e.target.value })} required>{films.map((film) => <option value={film.id_film} key={film.id_film}>{film.judul}</option>)}</select></label><label>Studio<select value={scheduleForm.id_studio} onChange={(e) => setScheduleForm({ ...scheduleForm, id_studio: e.target.value })} required>{studios.map((studio) => <option value={studio.id_studio} key={studio.id_studio}>{studio.bioskop.nama_bioskop} - {studio.nama_studio}</option>)}</select></label><div className="form-row"><label>Tanggal<input type="date" value={scheduleForm.tanggal} onChange={(e) => setScheduleForm({ ...scheduleForm, tanggal: e.target.value })} required /></label><label>Harga<input value={scheduleForm.harga} onChange={(e) => setScheduleForm({ ...scheduleForm, harga: e.target.value })} required /></label></div><div className="form-row"><label>Mulai<input type="time" value={scheduleForm.jam_mulai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_mulai: e.target.value })} required /></label><label>Selesai<input type="time" value={scheduleForm.jam_selesai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_selesai: e.target.value })} required /></label></div><div className="form-actions"><button className="button button-primary" disabled={saving}>Simpan</button>{editing && <button type="button" className="button button-secondary" onClick={cancelEdit}>Batal</button>}</div></form>
-        <div className="admin-panel admin-list"><h2>Daftar jadwal</h2>{schedules.map((item) => <article key={item.id_jadwal}><div><strong>{item.film.judul}</strong><span>{formatDate(item.tanggal)} · {item.jam_mulai}-{item.jam_selesai}</span><small>{item.studio.nama_studio} · {formatCurrency(item.harga)}</small></div><div><button onClick={() => { setEditing({ type: 'jadwal', id: item.id_jadwal }); setScheduleForm({ id_film: String(item.id_film), id_studio: String(item.id_studio), tanggal: item.tanggal.slice(0, 10), jam_mulai: item.jam_mulai, jam_selesai: item.jam_selesai, harga: String(item.harga) }); }}>Ubah</button><button className="danger-link" onClick={() => void remove('jadwal', item.id_jadwal, `jadwal ${item.film.judul}`)}>Hapus</button></div></article>)}</div>
+        <form className="admin-panel admin-form" onSubmit={submitSchedule}><h2>{editing?.type === 'jadwal' ? 'Ubah jadwal' : 'Tambah jadwal'}</h2><label>Film<select value={scheduleForm.id_film} onChange={(e) => setScheduleForm({ ...scheduleForm, id_film: e.target.value })} required>{films.map((film) => <option value={film.id_film} key={film.id_film}>{film.judul}</option>)}</select></label><label>Studio<select value={scheduleForm.id_studio} onChange={(e) => setScheduleForm({ ...scheduleForm, id_studio: e.target.value })} required>{studios.map((studio) => <option value={studio.id_studio} key={studio.id_studio}>{studio.bioskop.nama_bioskop} - {studio.nama_studio} ({studio.tipe})</option>)}</select></label><div className="form-row"><label>Tanggal<input type="date" value={scheduleForm.tanggal} onChange={(e) => setScheduleForm({ ...scheduleForm, tanggal: e.target.value })} required /></label><label>Harga<input value={scheduleForm.harga} onChange={(e) => setScheduleForm({ ...scheduleForm, harga: e.target.value })} required /></label></div><div className="form-row"><label>Mulai<input type="time" value={scheduleForm.jam_mulai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_mulai: e.target.value })} required /></label><label>Selesai<input type="time" value={scheduleForm.jam_selesai} onChange={(e) => setScheduleForm({ ...scheduleForm, jam_selesai: e.target.value })} required /></label></div><div className="form-actions"><button className="button button-primary" disabled={saving}>Simpan</button>{editing && <button type="button" className="button button-secondary" onClick={cancelEdit}>Batal</button>}</div></form>
+        <div className="admin-panel admin-list"><h2>Daftar jadwal</h2>{schedules.map((item) => <article key={item.id_jadwal}><div><strong>{item.film.judul}</strong><span>{formatDate(item.tanggal)} · {item.jam_mulai}-{item.jam_selesai}</span><small>{item.studio.bioskop.nama_bioskop} - {item.studio.nama_studio} ({item.studio.tipe}) · {formatCurrency(item.harga)}</small></div><div><button onClick={() => { setEditing({ type: 'jadwal', id: item.id_jadwal }); setScheduleForm({ id_film: String(item.id_film), id_studio: String(item.id_studio), tanggal: item.tanggal.slice(0, 10), jam_mulai: item.jam_mulai, jam_selesai: item.jam_selesai, harga: String(item.harga) }); }}>Ubah</button><button className="danger-link" onClick={() => void remove('jadwal', item.id_jadwal, `jadwal ${item.film.judul}`)}>Hapus</button></div></article>)}</div>
       </div>}
 
       {section === 'riwayat' && <AdminBookingHistory />}

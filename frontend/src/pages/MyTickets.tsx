@@ -85,7 +85,12 @@ export default function MyTickets() {
                       </dl>
                       <div className="selected-seats ticket-seats">
                         <span>Kursi</span>
-                        <div>{booking.detail.map((detail) => <strong key={detail.id_detail}>{detail.slot.kursi.nomor_kursi}</strong>)}</div>
+                        <div>
+                          {[...booking.detail]
+                            .sort((a, b) => a.slot.kursi.nomor_kursi.localeCompare(b.slot.kursi.nomor_kursi, undefined, { numeric: true, sensitivity: 'base' }))
+                            .map((detail) => <strong key={detail.id_detail}>{detail.slot.kursi.nomor_kursi}</strong>)
+                          }
+                        </div>
                       </div>
                       {booking.status === 'LUNAS' && (
                         <div className="ticket-codes">

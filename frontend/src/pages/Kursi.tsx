@@ -26,10 +26,25 @@ export default function Kursi() {
       result[slot.kursi.baris] = [...(result[slot.kursi.baris] || []), slot];
       return result;
     }, {});
-    return Object.fromEntries(Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)));
+    const sortedEntries = Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([row, slots]) => {
+        const sortedSlots = [...slots].sort((a, b) =>
+          a.kursi.nomor_kursi.localeCompare(b.kursi.nomor_kursi, undefined, { numeric: true, sensitivity: 'base' })
+        );
+        return [row, sortedSlots] as [string, SlotKursi[]];
+      });
+    return Object.fromEntries(sortedEntries);
   }, [schedule]);
 
-  const selectedSlots = (schedule?.slots || []).filter((slot) => selected.includes(slot.id_slot));
+  const selectedSlots = useMemo(() => {
+    return (schedule?.slots || [])
+      .filter((slot) => selected.includes(slot.id_slot))
+      .sort((a, b) =>
+        a.kursi.nomor_kursi.localeCompare(b.kursi.nomor_kursi, undefined, { numeric: true, sensitivity: 'base' })
+      );
+  }, [schedule, selected]);
+
   const total = Number(schedule?.harga || 0) * selected.length;
 
   const toggleSeat = (slot: SlotKursi) => {
