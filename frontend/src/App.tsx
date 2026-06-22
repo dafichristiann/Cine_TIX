@@ -9,15 +9,29 @@ import Kursi from './pages/Kursi';
 import Checkout from './pages/Checkout';
 import MyTickets from './pages/MyTickets';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminBookingHistory from './pages/AdminBookingHistory';
 import Layout from './components/Layout';
 import AuthProvider from './context/AuthProvider';
 import { useAuth } from './context/auth';
 import NotFound from './pages/NotFound';
 
+const isAdminUser = (role?: string) => role?.toLowerCase() === 'admin';
+
+const NonAdminRoute = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated } = useAuth();
+
+  return isAuthenticated && isAdminUser(user?.role)
+    ? <Navigate to="/admin" replace />
+    : <>{children}</>;
+};
+
 const PrivateRoute = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
+
+  if (isAuthenticated && isAdminUser(user?.role)) {
+    return <Navigate to="/admin" replace />;
+  }
+
   return isAuthenticated
     ? <>{children}</>
     : <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
@@ -31,7 +45,7 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
     return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  return user?.role?.toLowerCase() === 'admin'
+  return isAdminUser(user?.role)
     ? <>{children}</>
     : <Navigate to="/" replace />;
 };
@@ -42,16 +56,16 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/film" element={<FilmList />} />
-            <Route path="/jadwal/:id_film" element={<Jadwal />} />
+            <Route path="/" element={<NonAdminRoute><Home /></NonAdminRoute>} />
+            <Route path="/login" element={<NonAdminRoute><Login /></NonAdminRoute>} />
+            <Route path="/register" element={<NonAdminRoute><Register /></NonAdminRoute>} />
+            <Route path="/film" element={<NonAdminRoute><FilmList /></NonAdminRoute>} />
+            <Route path="/jadwal/:id_film" element={<NonAdminRoute><Jadwal /></NonAdminRoute>} />
             <Route path="/kursi/:id_jadwal" element={<PrivateRoute><Kursi /></PrivateRoute>} />
             <Route path="/checkout/:id_pemesanan" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/tiket-saya" element={<PrivateRoute><MyTickets /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/riwayat-pemesanan" element={<AdminRoute><AdminBookingHistory /></AdminRoute>} />
+            <Route path="/admin/riwayat-pemesanan" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

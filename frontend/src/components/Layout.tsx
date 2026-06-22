@@ -7,6 +7,11 @@ export default function Layout() {
   const { user, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+
+  if (isAdmin) {
+    return <div className="app-shell admin-layout-only"><main><Outlet /></main></div>;
+  }
 
   return (
     <div className="app-shell">
@@ -20,11 +25,10 @@ export default function Layout() {
             <span /><span /><span />
           </button>
           <nav className={menuOpen ? 'main-nav is-open' : 'main-nav'}>
-            <NavLink to="/" end onClick={closeMenu}>Beranda</NavLink>
-            <NavLink to="/film" onClick={closeMenu}>Film</NavLink>
-            {isAuthenticated && <NavLink to="/tiket-saya" onClick={closeMenu}>Tiket Saya</NavLink>}
-            {user?.role?.toLowerCase() === 'admin' && <NavLink to="/admin" onClick={closeMenu}>Admin</NavLink>}
-            <a href="/#cara-pesan" onClick={closeMenu}>Cara Pesan</a>
+            {!isAdmin && <NavLink to="/film" onClick={closeMenu}>Movies</NavLink>}
+            {!isAdmin && <NavLink to="/" end onClick={closeMenu}>About</NavLink>}
+            {!isAdmin && isAuthenticated && <NavLink to="/tiket-saya" onClick={closeMenu}>Tiket Saya</NavLink>}
+            {isAdmin && <NavLink to="/admin" onClick={closeMenu}>Admin</NavLink>}
             {isAuthenticated ? (
               <UserMenu />
             ) : (
@@ -43,7 +47,7 @@ export default function Layout() {
             <Link className="brand brand-light" to="/"><span className="brand-mark">C</span><span>Cine<span>Tix</span></span></Link>
             <p>Pesan tiket bioskop favoritmu dengan lebih cepat, aman, dan tanpa antre.</p>
           </div>
-          <div><strong>Navigasi</strong><Link to="/film">Film</Link><a href="/#cara-pesan">Cara pesan</a></div>
+          <div><strong>Navigasi</strong>{isAdmin ? <Link to="/admin">Admin</Link> : <><Link to="/film">Film</Link><a href="/#cara-pesan">Cara pesan</a></>}</div>
           <div><strong>Bantuan</strong><a href="mailto:support@cinetix.id">support@cinetix.id</a><span>Setiap hari, 09.00 - 22.00</span></div>
         </div>
         <div className="container footer-bottom">(c) {new Date().getFullYear()} CineTix. Dibuat untuk pengalaman nonton terbaik.</div>

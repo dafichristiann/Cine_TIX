@@ -28,6 +28,32 @@ export default function Register() {
   const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
 
   return (
-    <section className="auth-page"><div className="auth-decoration register-decoration"><div><span className="brand-mark large">C</span><h1>Kursi terbaik menunggumu.</h1><p>Buat akun dan nikmati pengalaman pesan tiket yang lebih sederhana.</p></div></div><div className="auth-form-wrap"><form className="auth-card register-card" onSubmit={submit}><p className="eyebrow">Mulai petualanganmu</p><h2>Buat akun CineTix</h2><p>Sudah punya akun? <Link to="/login">Masuk di sini</Link></p>{error && <ErrorBanner message={error} />}<div className="form-row"><label>Nama lengkap<input value={form.nama} onChange={(event) => update('nama', event.target.value)} placeholder="Nama lengkap" required autoComplete="name" /></label><label>No. telepon<input type="tel" value={form.no_telepon} onChange={(event) => update('no_telepon', event.target.value)} placeholder="08xxxxxxxxxx" autoComplete="tel" /></label></div><label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="nama@email.com" required autoComplete="email" /></label><div className="form-row"><label>Password<input type="password" value={form.password} onChange={(event) => update('password', event.target.value)} placeholder="Minimal 6 karakter" minLength={6} required autoComplete="new-password" /></label><label>Konfirmasi password<input type="password" value={form.confirmPassword} onChange={(event) => update('confirmPassword', event.target.value)} placeholder="Ulangi password" minLength={6} required autoComplete="new-password" /></label></div><button className="button button-primary button-block" type="submit" disabled={loading}>{loading ? 'Membuat akun...' : 'Daftar sekarang'}</button><small>Dengan mendaftar, kamu menyetujui ketentuan layanan dan kebijakan privasi.</small></form></div></section>
+    <section className="auth-minimal-page">
+      <form className="auth-minimal-card" onSubmit={submit}>
+        <Link className="auth-minimal-brand" to="/">CineTix</Link>
+        <h1>Create an Account</h1>
+        <p>Join to manage your bookings and preferences.</p>
+        {error && <ErrorBanner message={error} />}
+        <label>
+          Full Name
+          <span className="auth-input-icon"><i className="material-symbols-outlined">person</i><input value={form.nama} onChange={(event) => update('nama', event.target.value)} placeholder="John Doe" required autoComplete="name" /></span>
+        </label>
+        <label>
+          Email Address
+          <span className="auth-input-icon"><i className="material-symbols-outlined">mail</i><input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="john@example.com" required autoComplete="email" /></span>
+        </label>
+        <label>
+          Password
+          <span className="auth-input-icon"><i className="material-symbols-outlined">lock</i><input type="password" value={form.password} onChange={(event) => update('password', event.target.value)} placeholder="********" minLength={6} required autoComplete="new-password" /></span>
+        </label>
+        <label>
+          Confirm Password
+          <span className="auth-input-icon"><i className="material-symbols-outlined">lock_reset</i><input type="password" value={form.confirmPassword} onChange={(event) => update('confirmPassword', event.target.value)} placeholder="********" minLength={6} required autoComplete="new-password" /></span>
+        </label>
+        <button className="auth-submit-button" type="submit" disabled={loading}>{loading ? 'Creating...' : 'Register'} <span className="material-symbols-outlined">arrow_forward</span></button>
+        <small>Already have an account? <Link to="/login">Sign In</Link></small>
+      </form>
+      <p className="auth-minimal-footnote">Secure booking powered by CineTix Platform</p>
+    </section>
   );
 }

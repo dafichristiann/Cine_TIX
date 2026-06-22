@@ -22,14 +22,40 @@ export default function Login() {
     try {
       const response = await api.post<AuthResponse>('/auth/login', { email, password });
       signIn(response.data);
+      if (response.data.user.role?.toLowerCase() === 'admin') {
+        navigate('/admin', { replace: true });
+        return;
+      }
       const requested = searchParams.get('redirect');
-      navigate(requested?.startsWith('/') ? requested : '/');
+      navigate(requested?.startsWith('/') ? requested : '/', { replace: true });
     } catch (requestError) {
       setError(getApiError(requestError, 'Email atau password salah.'));
     } finally { setLoading(false); }
   };
 
   return (
-    <section className="auth-page"><div className="auth-decoration"><div><span className="brand-mark large">C</span><h1>Satu akun untuk semua cerita.</h1><p>Masuk, pilih kursi terbaikmu, dan biarkan layar lebar melakukan sisanya.</p></div></div><div className="auth-form-wrap"><form className="auth-card" onSubmit={submit}><p className="eyebrow">Selamat datang kembali</p><h2>Masuk ke CineTix</h2><p>Belum punya akun? <Link to="/register">Daftar sekarang</Link></p>{error && <ErrorBanner message={error} />}<label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@email.com" required autoComplete="email" /></label><label>Password<div className="password-field"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Masukkan password" required autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((show) => !show)}>{showPassword ? 'Sembunyikan' : 'Lihat'}</button></div></label><button className="button button-primary button-block" type="submit" disabled={loading}>{loading ? 'Memeriksa akun...' : 'Masuk'}</button><small>Dengan masuk, kamu menyetujui ketentuan layanan CineTix.</small></form></div></section>
+    <section className="auth-minimal-page">
+      <form className="auth-minimal-card" onSubmit={submit}>
+        <Link className="auth-minimal-brand" to="/">CineTix</Link>
+        <h1>Sign In</h1>
+        <p>Access your bookings and CineTix preferences.</p>
+        {error && <ErrorBanner message={error} />}
+        <label>
+          Email Address
+          <span className="auth-input-icon"><i className="material-symbols-outlined">mail</i><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="john@example.com" required autoComplete="email" /></span>
+        </label>
+        <label>
+          Password
+          <span className="auth-input-icon">
+            <i className="material-symbols-outlined">lock</i>
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="********" required autoComplete="current-password" />
+            <button type="button" onClick={() => setShowPassword((show) => !show)}>{showPassword ? 'Hide' : 'Show'}</button>
+          </span>
+        </label>
+        <button className="auth-submit-button" type="submit" disabled={loading}>{loading ? 'Checking...' : 'Sign In'} <span className="material-symbols-outlined">arrow_forward</span></button>
+        <small>Don't have an account? <Link to="/register">Register</Link></small>
+      </form>
+      <p className="auth-minimal-footnote">Secure booking powered by CineTix Platform</p>
+    </section>
   );
 }
