@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import api, { getApiError } from '../api/axios';
 import { ErrorBanner, LoadingState, EmptyState } from '../components/Status';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -28,8 +28,6 @@ export default function AdminBookingHistory() {
         );
         setBookings(response.data);
       } catch (requestError) {
-        // Abaikan error akibat request yang sengaja dibatalkan (request lama
-        // yang ditimpa oleh request baru saat user masih mengetik)
         if (signal?.aborted) return;
         setError(getApiError(requestError));
       } finally {
@@ -42,8 +40,6 @@ export default function AdminBookingHistory() {
   useEffect(() => {
     const controller = new AbortController();
 
-    // Debounce: tunggu user berhenti mengetik sebelum menembak request,
-    // supaya tidak ada request baru untuk tiap huruf yang diketik
     const timer = setTimeout(() => {
       loadBookings(controller.signal);
     }, SEARCH_DEBOUNCE_MS);
@@ -66,116 +62,146 @@ export default function AdminBookingHistory() {
     return { total, lunas, pending, batal, totalRevenue };
   }, [bookings]);
 
+  const inputClass = "mt-2 block w-full rounded-lg bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 text-sm placeholder-slate-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition";
+  const labelClass = "block text-xs font-semibold text-slate-400 uppercase tracking-wider w-full";
+
   return (
-    <div className="admin-workspace-stacked">
-      <div className="admin-panel admin-form">
-        <h2>Filter Riwayat Pemesanan</h2>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      
+      {/* 1. SECTION FILTER & STATISTIK PENDAPATAN */}
+      <div className="bg-slate-900 border border-slate-800/80 p-6 rounded-2xl shadow-lg space-y-6">
+        <h2 className="text-lg font-bold text-white tracking-tight">Filter Riwayat Pemesanan</h2>
 
         {error && <ErrorBanner message={error} />}
 
-        <label>
-          Status
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="ALL">Semua</option>
-            <option value="PENDING">Pending</option>
-            <option value="LUNAS">Lunas</option>
-            <option value="BATAL">Batal</option>
-          </select>
-        </label>
+        {/* Form Controls Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className={labelClass}>
+            Status Pembayaran
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={inputClass}
+            >
+              <option value="ALL">Semua</option>
+              <option value="PENDING">Pending</option>
+              <option value="LUNAS">Lunas</option>
+              <option value="BATAL">Batal</option>
+            </select>
+          </label>
 
-        <label>
-          Cari (nama, email, kode booking, film)
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Ketik untuk cari..."
-          />
-        </label>
+          <label className={labelClass}>
+            Cari Transaksi
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama, email, kode booking, film..."
+              className={inputClass}
+            />
+          </label>
+        </div>
 
-        <div className="admin-stats" style={{ marginTop: '20px' }}>
-          <article>
-            <span>Total Pesanan</span>
-            <strong>{stats.total}</strong>
-          </article>
-          <article>
-            <span>Lunas</span>
-            <strong>{stats.lunas}</strong>
-          </article>
-          <article>
-            <span>Pending</span>
-            <strong>{stats.pending}</strong>
-          </article>
-          <article>
-            <span>Total Pendapatan</span>
-            <strong>{formatCurrency(stats.totalRevenue)}</strong>
-          </article>
+        {/* Mini Stats Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-800/60">
+          {[
+            { title: 'Total Pesanan', val: stats.total, color: 'text-white' },
+            { title: 'Transaksi Lunas', val: stats.lunas, color: 'text-emerald-400' },
+            { title: 'Status Pending', val: stats.pending, color: 'text-amber-400' },
+            { title: 'Total Pendapatan', val: formatCurrency(stats.totalRevenue), color: 'text-teal-400' }
+          ].map((stat, idx) => (
+            <article key={idx} className="bg-slate-950/40 border border-slate-800/50 rounded-xl p-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{stat.title}</span>
+              <strong className={`block text-xl font-black mt-1 ${stat.color}`}>{stat.val}</strong>
+            </article>
+          ))}
         </div>
       </div>
 
-      <div className="admin-panel admin-list">
-        <h2>Daftar Pemesanan</h2>
+      {/* 2. SECTION DAFTAR TABEL PEMESANAN */}
+      <div className="bg-slate-900 border border-slate-800/80 p-6 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-bold text-white tracking-tight mb-5">Daftar Pemesanan Masuk</h2>
 
         {loading ? (
-          <LoadingState label="Memuat riwayat pemesanan..." />
+          <LoadingState label="Memuat data riwayat transaksi..." />
         ) : bookings.length ? (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <div className="overflow-x-auto rounded-xl border border-slate-800 custom-scrollbar">
+            <table className="w-full border-collapse text-left table-fixed min-w-[800px]">
               <colgroup>
-                <col style={{ width: '16%' }} />
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '22%' }} />
-                <col style={{ width: '16%' }} />
-                <col style={{ width: '13%' }} />
-                <col style={{ width: '13%' }} />
+                <col className="w-[15%]" />
+                <col className="w-[22%]" />
+                <col className="w-[23%]" />
+                <col className="w-[16%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
               </colgroup>
               <thead>
-                <tr style={{ borderBottom: '2px solid #ddd' }}>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Kode Booking</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Pengguna</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Film</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Tanggal</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Total</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '0.85rem' }}>Status</th>
+                <tr className="bg-slate-950 border-b border-slate-800">
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kode Booking</th>
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pengguna</th>
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Film / Studio</th>
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jadwal Operasional</th>
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Biaya</th>
+                  <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-850 bg-slate-900/40">
                 {bookings.map((booking) => (
-                  <tr key={booking.id_pemesanan} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
-                      <strong style={{ fontSize: '0.85rem', wordBreak: 'break-word' }}>
+                  <tr key={booking.id_pemesanan} className="hover:bg-slate-950/20 transition-colors duration-150">
+                    {/* Kode Booking */}
+                    <td className="p-4 align-top">
+                      <strong className="text-xs font-bold font-mono text-slate-300 block break-all">
                         {booking.kode_booking}
                       </strong>
                     </td>
-                    <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.85rem' }}>
-                          {booking.pengguna?.nama ?? '-'}
-                        </strong>
-                        <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
-                          {booking.pengguna?.email ?? '-'}
-                        </div>
-                      </div>
+                    
+                    {/* Pengguna */}
+                    <td className="p-4 align-top space-y-0.5">
+                      <strong className="text-xs font-semibold text-slate-200 block truncate">
+                        {booking.pengguna?.nama ?? '-'}
+                      </strong>
+                      <span className="text-[11px] text-slate-500 block truncate">
+                        {booking.pengguna?.email ?? '-'}
+                      </span>
                     </td>
-                    <td style={{ padding: '12px 10px', fontSize: '0.85rem', verticalAlign: 'top' }}>
-                      {booking.jadwal?.film?.judul ?? '-'}
-                      <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
+                    
+                    {/* Film & Bioskop */}
+                    <td className="p-4 align-top space-y-0.5">
+                      <span className="text-xs font-semibold text-slate-200 block truncate">
+                        {booking.jadwal?.film?.judul ?? '-'}
+                      </span>
+                      <span className="text-[11px] text-teal-500 block truncate font-medium">
                         {booking.jadwal?.studio?.bioskop?.nama_bioskop ?? '-'}
-                      </div>
+                      </span>
                     </td>
-                    <td style={{ padding: '12px 10px', fontSize: '0.85rem', verticalAlign: 'top' }}>
-                      {booking.jadwal?.tanggal ? formatDate(booking.jadwal.tanggal) : '-'}
-                      <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
-                        {booking.jadwal?.jam_mulai ?? '-'}
-                      </div>
+                    
+                    {/* Tanggal & Waktu */}
+                    <td className="p-4 align-top space-y-0.5">
+                      <span className="text-xs font-medium text-slate-300 block">
+                        {booking.jadwal?.tanggal ? formatDate(booking.jadwal.tanggal) : '-'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-mono block">
+                        🕒 {booking.jadwal?.jam_mulai ?? '-'}
+                      </span>
                     </td>
-                    <td style={{ padding: '12px 10px', fontWeight: 'bold', fontSize: '0.85rem', verticalAlign: 'top' }}>
-                      {formatCurrency(booking.total_harga)}
+                    
+                    {/* Total Harga */}
+                    <td className="p-4 align-top">
+                      <strong className="text-xs font-black text-white font-mono block">
+                        {formatCurrency(booking.total_harga)}
+                      </strong>
                     </td>
-                    <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
-                      <span
-                        className={`status-pill status-${booking.status.toLowerCase()}`}
-                      >
+                    
+                    {/* Status Badge */}
+                    <td className="p-4 align-top">
+                      <span className={`
+                        inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider border uppercase
+                        ${booking.status === 'LUNAS' 
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                          : booking.status === 'PENDING' 
+                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
+                            : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}
+                      `}>
                         {booking.status}
                       </span>
                     </td>
@@ -185,9 +211,12 @@ export default function AdminBookingHistory() {
             </table>
           </div>
         ) : (
-          <EmptyState title="Tidak ada pemesanan" message="Tidak ada pemesanan yang sesuai filter." />
+          <div className="bg-slate-950 border border-slate-800/60 rounded-xl p-8 text-center shadow-inner">
+            <EmptyState title="Tidak ada pemesanan" message="Tidak ada rekaman data pemesanan yang sesuai dengan filter pencarian Anda." />
+          </div>
         )}
       </div>
+
     </div>
   );
 }
