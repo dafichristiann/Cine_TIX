@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Search, Film as FilmIcon, Calendar } from 'lucide-react';
 import api, { getApiError } from '../api/axios';
 import FilmCard from '../components/FilmCard';
 import FilmCardSkeleton from '../components/FilmCardSkeleton';
@@ -10,6 +10,7 @@ export default function FilmList() {
   const [films, setFilms] = useState<Film[]>([]);
   const [search, setSearch] = useState('');
   const [genre, setGenre] = useState('Semua');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'tayang' | 'tidak_tayang'>('tayang');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -28,92 +29,128 @@ export default function FilmList() {
   const filtered = films.filter((film) => {
     const matchSearch = film.judul.toLowerCase().includes(search.toLowerCase());
     const matchGenre = genre === 'Semua' || film.genre.toLowerCase().includes(genre.toLowerCase());
-    return matchSearch && matchGenre;
+    const matchStatus = statusFilter === 'all' || film.status === statusFilter;
+    return matchSearch && matchGenre && matchStatus;
   });
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 w-full">
+    <div className="space-y-8 animate-in fade-in duration-500 w-full">
       
-      {/* 1. HERO PAGE COMPACT */}
-      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/60 py-8 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-[100px] pointer-events-none" />
-        <div className="max-w-4xl">
-          <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">Pilih ceritamu</p>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-1 text-white">Jelajahi Katalog Film CineTix</h1>
-          <p className="text-sm text-slate-400 mt-2 max-w-xl">Dari aksi yang memicu adrenalin hingga kisah drama romantis yang menghangatkan hati penonton.</p>
+      {/* 1. CINEMA CATALOG HEADER */}
+      <section className="bg-canvas-card border border-border-subtle rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-lg">
+        <div className="max-w-2xl space-y-2">
+          <div className="flex items-center space-x-2">
+            <FilmIcon className="w-4 h-4 text-gold-400" />
+            <span className="text-[10px] font-bold tracking-widest text-gold-400 uppercase">
+              Katalog Bioskop Indonesia
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-headline">
+            Jadwal Tayang & Film Pilihan
+          </h1>
+          <p className="text-xs text-text-muted leading-relaxed">
+            Temukan informasi film box office terkini yang sedang tayang maupun segera hadir di jaringan bioskop CineTix. Cek sinopsis, durasi, klasifikasi usia, dan amankan kursi terbaik.
+          </p>
         </div>
       </section>
 
-      {/* 2. FILTER & GENRE BAR SECTION */}
-      <section className="bg-slate-900 border border-slate-800/80 p-5 rounded-2xl shadow-lg space-y-4">
+      {/* 2. FILTER & PENCARIAN */}
+      <section className="bg-canvas-card border border-border-subtle p-4 sm:p-5 rounded-2xl space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           
-          {/* Input Box Cari Judul */}
-          <div className="w-full lg:max-w-xs">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Cari Film
-              <input 
-                value={search} 
-                onChange={(event) => setSearch(event.target.value)} 
-                placeholder="Ketik judul film..." 
-                className="mt-2 block w-full rounded-lg bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 text-sm placeholder-slate-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition"
-              />
-            </label>
+          {/* Status Tabs */}
+          <div className="flex items-center space-x-1.5 bg-canvas-base p-1 rounded-xl border border-border-subtle w-fit">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('tayang')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 ${
+                statusFilter === 'tayang' ? 'bg-gold-500 text-text-on-gold shadow-sm' : 'text-text-muted hover:text-text-headline'
+              }`}
+            >
+              <FilmIcon className="w-3.5 h-3.5" />
+              <span>Sedang Tayang</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('tidak_tayang')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 ${
+                statusFilter === 'tidak_tayang' ? 'bg-gold-500 text-text-on-gold shadow-sm' : 'text-text-muted hover:text-text-headline'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Segera Hadir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
+                statusFilter === 'all' ? 'bg-canvas-elevated text-text-headline font-bold' : 'text-text-muted hover:text-text-headline'
+              }`}
+            >
+              Semua
+            </button>
           </div>
 
-          {/* Deretan Tab Filter Genre (Pills Style) */}
-          <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
-            <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 lg:hidden">
-              Kategori Genre
-            </span>
-            <div className="flex space-x-2 min-w-max lg:justify-end pt-1">
-              {genres.map((item) => {
-                const isActive = genre === item;
-                return (
-                  <button
-                    type="button"
-                    key={item}
-                    onClick={() => setGenre(item)}
-                    className={`px-3.5 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 ${
-                      isActive
-                        ? 'bg-teal-500 border-teal-500 text-slate-950 font-bold shadow-md shadow-teal-500/10'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Search Box */}
+          <div className="w-full lg:max-w-xs relative">
+            <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              placeholder="Cari judul film..." 
+              className="block w-full rounded-xl bg-canvas-base border border-border-subtle text-text-headline pl-10 pr-3.5 py-2 text-xs placeholder-text-disabled focus:border-gold-500 focus:outline-none transition"
+            />
           </div>
+        </div>
 
+        {/* Genre Chips */}
+        <div className="flex items-center space-x-2 overflow-x-auto pt-2 border-t border-border-subtle scrollbar-none">
+          <span className="text-[11px] font-semibold text-text-muted shrink-0">Genre:</span>
+          {genres.map((item) => {
+            const isActive = genre === item;
+            return (
+              <button
+                type="button"
+                key={item}
+                onClick={() => setGenre(item)}
+                className={`px-3 py-1 text-xs font-medium rounded-lg border transition shrink-0 ${
+                  isActive
+                    ? 'bg-gold-500/15 border-gold-500/40 text-gold-400 font-bold'
+                    : 'bg-canvas-base border-border-subtle text-text-muted hover:text-text-headline hover:border-border-elevated'
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* 3. CORE DISPLAY MOVIE SYSTEM */}
-      <section className="relative min-h-[40vh]">
+      {/* 3. GRID KATALOG FILM */}
+      <section className="relative min-h-[40vh] space-y-4">
+        <div className="flex items-center justify-between text-xs text-text-muted">
+          <span>Menampilkan <strong className="text-text-headline">{filtered.length}</strong> film</span>
+        </div>
+
         {error && <ErrorBanner message={error} />}
 
-        {/* Menerapkan Animasi Grid Premium */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, idx) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {Array.from({ length: 10 }).map((_, idx) => (
               <FilmCardSkeleton key={idx} />
             ))}
           </div>
         ) : filtered.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
             {filtered.map((film) => (
-              <div key={film.id_film} className="hover:-translate-y-1 transition duration-300">
-                <FilmCard film={film} />
-              </div>
+              <FilmCard key={film.id_film} film={film} />
             ))}
           </div>
         ) : (
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-12 shadow-inner">
+          <div className="bg-canvas-card border border-border-subtle rounded-2xl p-12 text-center">
             <EmptyState 
               title="Film Tidak Ditemukan" 
-              message="Maaf, tidak ada film yang sesuai dengan kata kunci atau filter kategori genre yang Anda cari." 
+              message="Tidak ada judul film atau filter genre yang cocok dengan kriteria pencarian Anda." 
             />
           </div>
         )}

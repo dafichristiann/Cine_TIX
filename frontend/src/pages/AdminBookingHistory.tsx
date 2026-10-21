@@ -62,7 +62,7 @@ export default function AdminBookingHistory() {
     return { total, lunas, pending, batal, totalRevenue };
   }, [bookings]);
 
-  const inputClass = "mt-2 block w-full rounded-lg bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 text-sm placeholder-slate-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition";
+  const inputClass = "mt-2 block w-full rounded-lg bg-canvas-base border border-border-subtle text-text-headline px-3 py-2 text-sm placeholder-text-disabled focus:border-gold-500 focus:outline-none transition";
   const labelClass = "block text-xs font-semibold text-slate-400 uppercase tracking-wider w-full";
 
   return (
@@ -103,15 +103,15 @@ export default function AdminBookingHistory() {
         </div>
 
         {/* Mini Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-800/60">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-border-subtle">
           {[
-            { title: 'Total Pesanan', val: stats.total, color: 'text-white' },
+            { title: 'Total Pesanan', val: stats.total, color: 'text-text-headline' },
             { title: 'Transaksi Lunas', val: stats.lunas, color: 'text-emerald-400' },
-            { title: 'Status Pending', val: stats.pending, color: 'text-amber-400' },
-            { title: 'Total Pendapatan', val: formatCurrency(stats.totalRevenue), color: 'text-teal-400' }
+            { title: 'Status Pending', val: stats.pending, color: 'text-gold-400' },
+            { title: 'Total Pendapatan', val: formatCurrency(stats.totalRevenue), color: 'text-gold-400' }
           ].map((stat, idx) => (
-            <article key={idx} className="bg-slate-950/40 border border-slate-800/50 rounded-xl p-4">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{stat.title}</span>
+            <article key={idx} className="bg-canvas-base border border-border-subtle rounded-xl p-4">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">{stat.title}</span>
               <strong className={`block text-xl font-black mt-1 ${stat.color}`}>{stat.val}</strong>
             </article>
           ))}
@@ -119,7 +119,7 @@ export default function AdminBookingHistory() {
       </div>
 
       {/* 2. SECTION DAFTAR TABEL PEMESANAN */}
-      <div className="bg-slate-900 border border-slate-800/80 p-6 rounded-2xl shadow-lg">
+      <div className="bg-canvas-card border border-border-subtle p-6 rounded-2xl shadow-lg">
         <h2 className="text-lg font-bold text-white tracking-tight mb-5">Daftar Pemesanan Masuk</h2>
 
         {loading ? (
@@ -170,7 +170,7 @@ export default function AdminBookingHistory() {
                       <span className="text-xs font-semibold text-slate-200 block truncate">
                         {booking.jadwal?.film?.judul ?? '-'}
                       </span>
-                      <span className="text-[11px] text-teal-500 block truncate font-medium">
+                      <span className="text-[11px] text-gold-400 block truncate font-medium">
                         {booking.jadwal?.studio?.bioskop?.nama_bioskop ?? '-'}
                       </span>
                     </td>
@@ -181,7 +181,7 @@ export default function AdminBookingHistory() {
                         {booking.jadwal?.tanggal ? formatDate(booking.jadwal.tanggal) : '-'}
                       </span>
                       <span className="text-[11px] text-slate-500 font-mono block">
-                        🕒 {booking.jadwal?.jam_mulai ?? '-'}
+                        {booking.jadwal?.jam_mulai ?? '-'}
                       </span>
                     </td>
                     

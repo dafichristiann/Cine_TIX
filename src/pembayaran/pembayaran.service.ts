@@ -8,6 +8,7 @@ import {
   
   import { SlotKursiService } from '../slot-kursi/slot-kursi.service';
   import { NotifikasiService } from '../notifikasi/notifikasi.service';
+  import { MailService } from '../mail/mail.service';
   
   import { CreatePembayaranDto } from './dto/create-pembayaran.dto';
   
@@ -17,6 +18,7 @@ import {
       private prisma: PrismaService,
       private slotService: SlotKursiService,
       private notifService: NotifikasiService,
+      private mailService: MailService,
     ) {}
   
     async buatPembayaran(
@@ -254,6 +256,42 @@ import {
           'Pembayaran demo berhasil! Tiket Anda sudah dapat digunakan.',
         tipe: 'EMAIL',
       });
+
+      // Kirim e-tiket konfirmasi resmi via SMTP Mailer
+      const user = await this.prisma.pengguna.findUnique({
+        where: { id_pengguna },
+      });
+      if (user?.email) {
+        const fullBooking = await this.prisma.pemesanan.findUnique({
+          where: { id_pemesanan },
+          include: {
+            jadwal: {
+              include: {
+                film: true,
+                studio: { include: { bioskop: true } },
+              },
+            },
+            detail: {
+              include: {
+                slot: { include: { kursi: true } },
+              },
+            },
+          },
+        });
+
+        if (fullBooking) {
+          this.mailService.sendTicketConfirmation(user.email, {
+            kode_booking: fullBooking.kode_booking,
+            judul: fullBooking.jadwal.film.judul,
+            bioskop: fullBooking.jadwal.studio.bioskop.nama_bioskop,
+            studio: fullBooking.jadwal.studio.nama_studio,
+            tanggal: new Date(fullBooking.jadwal.tanggal).toLocaleDateString('id-ID', { dateStyle: 'full' }),
+            jam: fullBooking.jadwal.jam_mulai,
+            seats: fullBooking.detail.map((d) => d.slot.kursi.nomor_kursi),
+            total: Number(fullBooking.total_harga),
+          }).catch(() => {});
+        }
+      }
 
       return pembayaran;
     }

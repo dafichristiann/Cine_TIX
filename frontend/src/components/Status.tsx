@@ -1,13 +1,13 @@
+import { AlertCircle, Film, Loader2 } from 'lucide-react';
+
 export function LoadingState({ label = 'Memuat data...' }: { label?: string }) {
   return (
     <div 
-      className="w-full flex flex-col items-center justify-center py-12 px-6 text-center space-y-4 select-none animate-in fade-in duration-300" 
+      className="w-full flex flex-col items-center justify-center py-16 px-6 text-center space-y-4 select-none animate-in fade-in duration-300" 
       role="status"
     >
-      {/* Spinner Bulat Kreatif Sinematik */}
-      <div className="w-10 h-10 rounded-full border-4 border-slate-800 border-t-teal-500 animate-spin shadow-md shadow-teal-500/5" />
-      
-      <p className="text-sm font-medium text-slate-400 font-sans tracking-wide">
+      <Loader2 className="w-8 h-8 text-gold-400 animate-spin" />
+      <p className="text-xs font-medium text-text-muted tracking-wider uppercase">
         {label}
       </p>
     </div>
@@ -16,17 +16,16 @@ export function LoadingState({ label = 'Memuat data...' }: { label?: string }) {
 
 export function EmptyState({ title, message }: { title: string; message: string }) {
   return (
-    <div className="w-full flex flex-col items-center justify-center py-12 px-6 text-center space-y-3 select-none animate-in zoom-in-95 duration-350">
-      {/* Icon Placeholder Avatar Box */}
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-900 via-slate-950 to-slate-900 border border-slate-800/80 flex items-center justify-center font-black text-slate-700 text-xl shadow-inner shadow-slate-950">
-        C
+    <div className="w-full flex flex-col items-center justify-center py-16 px-6 text-center space-y-3 select-none animate-in zoom-in-95 duration-350">
+      <div className="w-12 h-12 rounded-xl bg-canvas-elevated border border-border-elevated flex items-center justify-center text-text-muted shadow-inner">
+        <Film className="w-6 h-6" />
       </div>
       
       <div className="space-y-1">
-        <h2 className="text-base font-bold text-slate-200 tracking-tight">
+        <h2 className="text-sm font-semibold text-text-headline tracking-tight">
           {title}
         </h2>
-        <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+        <p className="text-xs text-text-muted max-w-sm mx-auto leading-relaxed">
           {message}
         </p>
       </div>
@@ -37,13 +36,10 @@ export function EmptyState({ title, message }: { title: string; message: string 
 export function ErrorBanner({ message }: { message: string }) {
   return (
     <div 
-      className="w-full bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-xs font-semibold text-rose-400 flex items-center space-x-2.5 shadow-sm shadow-rose-950/10 animate-in slide-in-from-top-2 duration-200" 
+      className="w-full bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-xs font-medium text-rose-300 flex items-center space-x-3 shadow-sm animate-in slide-in-from-top-2 duration-200" 
       role="alert"
     >
-      {/* Icon Alert Warning */}
-      <span className="flex items-center justify-center w-5 h-5 rounded-md bg-rose-500/10 text-[10px] font-black shrink-0 border border-rose-500/20 select-none">
-        ⚠️
-      </span>
+      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
       <span className="leading-normal break-words flex-1">
         {message}
       </span>

@@ -1,202 +1,373 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  Film as FilmIcon, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  ArrowRight, 
+  ShieldCheck,
+  UtensilsCrossed,
+  Sparkles,
+  ChevronRight,
+  Search,
+  Ticket
+} from 'lucide-react';
 import api, { getApiError } from '../api/axios';
 import FilmCard from '../components/FilmCard';
-import PosterImage from '../components/PosterImage';
 import { ErrorBanner, LoadingState } from '../components/Status';
-import type { Film, Jadwal } from '../types';
+import type { Film, Bioskop } from '../types';
+
+const promoBanners = [
+  {
+    id: 1,
+    tag: 'PROMO EKSKLUSIF',
+    title: 'Diskon 20% Pemesanan Tiket Pertama',
+    desc: 'Gunakan kode voucher CINETIX10 saat checkout untuk potongan harga tiket.',
+    bg: 'from-gold-900/30 via-canvas-card to-canvas-base',
+    cta: 'Pesan Sekarang',
+    link: '/film',
+  },
+  {
+    id: 2,
+    tag: 'F&B COMBO DEAL',
+    title: 'Paket Popcorn Karamel & 2 Minuman Dingin',
+    desc: 'Beli paket combo hemat langsung bersamaan saat memilih kursi bioskop.',
+    bg: 'from-canvas-elevated via-canvas-card to-canvas-base',
+    cta: 'Lihat Menu',
+    link: '/film',
+  },
+  {
+    id: 3,
+    tag: 'PENGALAMAN SINEMATIK',
+    title: 'Studio IMAX & Dolby Atmos Resmi',
+    desc: 'Sensasi suara surround 360 derajat dan layar super lebar di bioskop CineTix.',
+    bg: 'from-gold-900/20 via-canvas-card to-canvas-base',
+    cta: 'Cari Jadwal',
+    link: '/film',
+  },
+];
+
+const newsArticles = [
+  {
+    id: 1,
+    title: 'Daftar Film Box Office Terlaris Pekan Ini di Seluruh Bioskop Indonesia',
+    category: 'Box Office',
+    date: '21 Oktober 2026',
+    desc: 'Persaingan ketat film laga petualangan dan horor lokal mendominasi perolehan jumlah penonton minggu ini.',
+  },
+  {
+    id: 2,
+    title: 'Teknologi Proyeksi Laser 4K Terbaru Hadir di Jaringan Studio CineTix',
+    category: 'Teknologi Bioskop',
+    date: '19 Oktober 2026',
+    desc: 'Kualitas gambar lebih jernih dan kontras warna mendalam memberikan pengalaman menonton tiada tanding.',
+  },
+  {
+    id: 3,
+    title: 'Katalog Menu Snack & Minuman Baru XXI Cafe Resmi Tersedia di CineTix',
+    category: 'F&B Concession',
+    date: '16 Oktober 2026',
+    desc: 'Kini Anda dapat memesan popcorn rasa keju gurih dan caramel crunch langsung dari aplikasi tanpa perlu antre di counter.',
+  },
+];
 
 export default function Home() {
   const [films, setFilms] = useState<Film[]>([]);
-  const [scheduleCount, setScheduleCount] = useState(0);
+  const [bioskops, setBioskops] = useState<Bioskop[]>([]);
+  const [selectedCity, setSelectedCity] = useState<string>('Semua');
+  const [activeTab, setActiveTab] = useState<'tayang' | 'segera'>('tayang');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([api.get<Film[]>('/film'), api.get<Jadwal[]>('/jadwal')])
-      .then(([filmResponse, scheduleResponse]) => {
-        setFilms(filmResponse.data);
-        setScheduleCount(scheduleResponse.data.length);
-        // PENTING: Cek apakah data film benar-benar masuk dan ada isinya di console browser
-        console.log("DATA FILMS DARI BACKEND:", filmResponse.data);
+    Promise.all([
+      api.get<Film[]>('/film'),
+      api.get<Bioskop[]>('/bioskop'),
+    ])
+      .then(([filmRes, bioRes]) => {
+        setFilms(filmRes.data);
+        setBioskops(bioRes.data);
       })
       .catch((requestError: unknown) => setError(getApiError(requestError)))
       .finally(() => setLoading(false));
   }, []);
 
-  const featured = films.slice(0, 4);
-  const spotlight = films[0];
+  // Banner auto-cycle
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveBannerIdx((prev) => (prev + 1) % promoBanners.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const cities = ['Semua', ...new Set(bioskops.map((b) => b.kota).filter(Boolean))];
+
+  const filteredFilms = films.filter((film) => {
+    const matchesTab = activeTab === 'tayang' ? film.status === 'tayang' : film.status !== 'tayang';
+    const matchesSearch = film.judul.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          film.genre.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
 
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <LoadingState label="Menyiapkan film terbaik..." />
+        <LoadingState label="Menyiapkan film dan jadwal bioskop..." />
       </div>
     );
   }
 
+  const currentBanner = promoBanners[activeBannerIdx];
+
   return (
-    <div className="space-y-16 animate-in fade-in duration-700 w-full overflow-hidden">
+    <div className="space-y-10 animate-in fade-in duration-500 w-full">
       
-      {/* 1. HERO SECTION WITH FIXED MULTI-FILM BACKDROP COLLAGE */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800/80 p-6 sm:p-10 lg:p-12 w-full shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
-        
-        {/* ===== UTK TRACER: JIKA ARRAY ADA ISI, KITA PAKSA MUNCULKAN COLLAGE ===== */}
-        {films.length > 0 && (
-          <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden rounded-3xl z-0 opacity-[0.20] blur-xl scale-110 transform-gpu">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full h-full absolute inset-0">
-              {films.slice(0, 8).map((film, idx) => {
-                // Trik Jitu: Jika database kosong/null, kita inject langsung link gambar Unsplash yang valid untuk testing background
-                const posterTarget = film.poster_url || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=500&auto=format&fit=crop";
-                
-                return (
-                  <div key={`bg-${film.id_film}-${idx}`} className="w-full h-full relative overflow-hidden bg-slate-900">
-                    <img 
-                      src={posterTarget} 
-                      alt="" 
-                      className="w-full h-full object-cover object-center absolute inset-0 block"
-                      onError={(e) => {
-                        // Jika link gambar dari database-mu corrupt/error, paksa ganti ke gambar bawaan biar ga blank hitam
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=500&auto=format&fit=crop";
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div className="absolute inset-0 bg-slate-950/40" />
-          </div>
-        )}
-
-        {/* Lapisan Gradasi (Vinyet) Utama untuk Menjaga Keterbacaan Teks Putih */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 z-0" />
-
-        {/* Lapisan Ambient Glow Teal */}
-        <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse duration-[5000ms] z-0" />
-
-        {/* KONTEN UTAMA HERO LAYER */}
-        <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full z-10">
-          {/* Hero Copy (Kiri) */}
-          <div className="lg:col-span-7 space-y-6">
-            <span className="inline-flex items-center space-x-2 bg-teal-500/10 border border-teal-500/20 px-3 py-1 rounded-full text-xs font-semibold text-teal-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              <span>Pengalaman bioskop dalam genggaman</span>
+      {/* 1. TOP PROMO SLIDER / HERO BANNER */}
+      <section className="relative overflow-hidden rounded-2xl border border-border-subtle bg-canvas-card shadow-xl">
+        <div className={`p-6 sm:p-10 lg:p-12 bg-gradient-to-r ${currentBanner.bg} transition-all duration-700 min-h-[220px] sm:min-h-[260px] flex flex-col justify-center`}>
+          <div className="max-w-xl space-y-3">
+            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-gold-500/15 border border-gold-500/30 text-gold-400 uppercase">
+              {currentBanner.tag}
             </span>
-            
-            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-              Cerita besar dimulai dari <span className="relative bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent font-extrabold">satu kursi.<span className="absolute left-0 bottom-1 w-full h-[3px] bg-teal-500/20 rounded-full" /></span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-headline tracking-tight leading-tight">
+              {currentBanner.title}
             </h1>
-            
-            <p className="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed">
-              Temukan film terbaru, pilih jadwal yang pas, dan amankan kursi favoritmu dalam hitungan menit tanpa antre.
+            <p className="text-xs sm:text-sm text-text-body leading-relaxed">
+              {currentBanner.desc}
             </p>
-            
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Link 
-                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all duration-300 transform active:scale-95 hover:scale-[1.03] shadow-lg hover:shadow-teal-500/20 flex items-center space-x-2" 
-                to="/film"
+            <div className="pt-2">
+              <Link
+                to={currentBanner.link}
+                className="inline-flex items-center space-x-2 bg-gold-500 hover:bg-gold-600 text-text-on-gold font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-sm shadow-gold-500/15"
               >
-                <span>Pesan Tiket Sekarang</span>
-                <span className="font-mono text-xs">{"->"}</span>
+                <span>{currentBanner.cta}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
-              <a 
-                className="bg-slate-950/60 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all duration-200 transform active:scale-95 hover:border-slate-700" 
-                href="#sedang-tayang"
-              >
-                Lihat Film
-              </a>
             </div>
           </div>
+        </div>
 
-          {/* Hero Visual Card Spotlight (Kanan) */}
-          <div className="lg:col-span-5 relative flex justify-center lg:justify-end">
-            <div className="w-full max-w-sm bg-slate-950 border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl group transition-all duration-500 hover:border-teal-500/30 hover:shadow-[0_0_30px_rgba(20,184,166,0.15)]">
-              <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                {spotlight ? (
-                  <div className="w-full h-full transform group-hover:scale-105 group-hover:opacity-90 transition duration-700 ease-out">
-                    <PosterImage film={spotlight} className="w-full h-full object-cover object-center" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-black text-slate-800">C</div>
-                )}
-                <span className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md border border-slate-800 text-[10px] font-bold tracking-wider uppercase text-teal-400 px-2.5 py-1 rounded-md shadow-md">
-                  Pilihan minggu ini
-                </span>
-              </div>
-              
-              <div className="p-5 space-y-2.5 bg-gradient-to-b from-slate-950 to-slate-900">
-                <p className="text-[9px] font-bold text-teal-400 tracking-widest uppercase">SEGERA DI LAYAR</p>
-                <h2 className="text-base font-extrabold text-white truncate group-hover:text-teal-400 transition duration-200">{spotlight?.judul || 'Film pilihan CineTix'}</h2>
-                <div className="flex items-center space-x-3 text-xs text-slate-400">
-                  <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-[11px]">{spotlight?.genre || 'Beragam genre'}</span>
-                  <span>•</span>
-                  <span className="font-mono text-[11px]">{spotlight ? `${spotlight.durasi} mnt` : 'Setiap hari'}</span>
-                </div>
-              </div>
-            </div>
+        {/* Carousel indicators */}
+        <div className="absolute bottom-4 right-4 flex space-x-1.5 z-10">
+          {promoBanners.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setActiveBannerIdx(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                activeBannerIdx === idx ? 'w-6 bg-gold-400' : 'w-2 bg-border-elevated'
+              }`}
+              aria-label={`Banner ${idx + 1}`}
+            />
+          ))}
+        </div>
+      </section>
 
-            {/* Floating Info Tag */}
-            <div className="absolute -bottom-4 -left-4 sm:left-4 lg:-left-6 bg-gradient-to-tr from-slate-900 via-slate-900 to-slate-800 border border-slate-700/60 rounded-xl p-3.5 shadow-2xl flex items-center space-x-3 backdrop-blur-sm transform hover:-translate-y-1 transition duration-300 select-none">
-              <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping absolute -top-1 -right-1" />
-              <strong className="text-2xl font-black text-white font-mono tracking-tight">{scheduleCount}+</strong>
-              <div className="leading-none">
-                <span className="text-[9px] font-bold uppercase text-slate-400 block tracking-wider">Jadwal</span>
-                <span className="text-[11px] font-semibold text-teal-400 mt-0.5 block">Tersedia Hari Ini</span>
-              </div>
-            </div>
+      {/* 2. CINEMA FILTER & SEARCH BAR */}
+      <section className="bg-canvas-card border border-border-subtle rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        {/* TAB PILIHAN: SEDANG TAYANG VS SEGERA HADIR */}
+        <div className="flex items-center space-x-1 bg-canvas-base p-1 rounded-xl border border-border-subtle">
+          <button
+            type="button"
+            onClick={() => setActiveTab('tayang')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 ${
+              activeTab === 'tayang'
+                ? 'bg-gold-500 text-text-on-gold shadow-sm'
+                : 'text-text-muted hover:text-text-headline'
+            }`}
+          >
+            <FilmIcon className="w-3.5 h-3.5" />
+            <span>Sedang Tayang</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('segera')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 ${
+              activeTab === 'segera'
+                ? 'bg-gold-500 text-text-on-gold shadow-sm'
+                : 'text-text-muted hover:text-text-headline'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Segera Hadir</span>
+          </button>
+        </div>
+
+        {/* CITY SELECTOR & SEARCH BOX */}
+        <div className="flex items-center space-x-3">
+          {/* City Chips */}
+          <div className="hidden lg:flex items-center space-x-1.5 text-xs">
+            <MapPin className="w-3.5 h-3.5 text-gold-400" />
+            <span className="text-text-muted font-medium">Kota:</span>
+            {cities.slice(0, 4).map((city) => (
+              <button
+                key={city}
+                type="button"
+                onClick={() => setSelectedCity(city)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                  selectedCity === city
+                    ? 'bg-canvas-elevated text-text-headline font-bold border border-border-elevated'
+                    : 'text-text-muted hover:text-text-headline'
+                }`}
+              >
+                {city}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Box */}
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari judul film..."
+              className="w-full bg-canvas-base border border-border-subtle text-text-headline pl-9 pr-3 py-2 text-xs rounded-xl focus:border-gold-500 focus:outline-none transition"
+            />
           </div>
         </div>
       </section>
 
-      {/* 2. MOVIE GRID SECTION WITH STYLISH HOVER ELEVATION */}
-      <section id="sedang-tayang" className="scroll-mt-24 w-full animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">Pilihan Terbaik</p>
-            <h2 className="text-2xl font-extrabold text-white mt-1 tracking-tight">Sedang Tayang di Bioskop</h2>
-            <p className="text-sm text-slate-400 mt-0.5">Film seru yang siap menemani waktu santai terbaikmu.</p>
+      {/* 3. MOVIE CATALOG GRID */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+          <div className="space-y-0.5">
+            <h2 className="text-base sm:text-lg font-bold text-text-headline tracking-tight uppercase">
+              {activeTab === 'tayang' ? 'Film Sedang Tayang di Bioskop' : 'Segera Tayang di Bioskop'}
+            </h2>
+            <p className="text-[11px] text-text-muted">
+              Pilih film untuk melihat cabang bioskop dan jam penayangan
+            </p>
           </div>
-          <Link className="text-sm font-semibold text-teal-400 hover:text-teal-300 transition flex items-center space-x-1 shrink-0 group" to="/film">
-            <span>Lihat semua film</span>
-            <span className="font-mono text-xs transform group-hover:translate-x-1 transition duration-200">{"->"}</span>
+
+          <Link
+            to="/film"
+            className="text-xs font-semibold text-gold-400 hover:text-gold-300 flex items-center space-x-1 transition"
+          >
+            <span>Seluruh Katalog</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {error && <ErrorBanner message={error} />}
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
-          {featured.map((film) => (
-            <div 
-              key={film.id_film} 
-              className="transform hover:-translate-y-2.5 hover:scale-[1.01] transition-all duration-300 hover:shadow-[0_20px_35px_rgba(0,0,0,0.6)] rounded-2xl border border-transparent hover:border-slate-800"
+
+        {filteredFilms.length ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {filteredFilms.map((film) => (
+              <FilmCard key={film.id_film} film={film} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-canvas-card border border-border-subtle rounded-2xl p-12 text-center">
+            <p className="text-xs text-text-muted">Tidak ada film yang cocok dengan pencarian.</p>
+          </div>
+        )}
+      </section>
+
+      {/* 4. CONCESSION F&B BANNER */}
+      <section className="bg-gradient-to-r from-gold-950/20 via-canvas-card to-canvas-base border border-border-subtle rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl">
+          <div className="flex items-center space-x-2">
+            <UtensilsCrossed className="w-4 h-4 text-gold-400" />
+            <span className="text-[10px] font-bold tracking-widest text-gold-400 uppercase">
+              CineTix Concession & Cafe
+            </span>
+          </div>
+          <h3 className="text-lg sm:text-xl font-bold text-text-headline tracking-tight">
+            Paket Popcorn Karamel, Minuman Segar & Camilan Bioskop
+          </h3>
+          <p className="text-xs text-text-muted leading-relaxed">
+            Lengkapi keseruan menonton film favorit Anda. Pesan snack dan minuman secara praktis saat memilih kursi, langsung ambil di counter bioskop tanpa antre.
+          </p>
+        </div>
+
+        <Link
+          to="/film"
+          className="shrink-0 bg-canvas-elevated hover:bg-canvas-floating text-gold-400 border border-gold-500/30 text-xs font-bold px-5 py-2.5 rounded-xl transition flex items-center space-x-2"
+        >
+          <span>Pilih Jadwal & F&B</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </section>
+
+      {/* 5. SPOTLIGHT BERITA FILM */}
+      <section className="space-y-4">
+        <div className="border-b border-border-subtle pb-3">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-gold-400" />
+            <h2 className="text-base sm:text-lg font-bold text-text-headline tracking-tight uppercase">
+              CineTix Spotlight & Berita Bioskop
+            </h2>
+          </div>
+          <p className="text-[11px] text-text-muted mt-0.5">
+            Informasi terkini seputar rilisan film layar lebar, ulasan, dan promo tiket bioskop
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {newsArticles.map((article) => (
+            <article
+              key={article.id}
+              className="bg-canvas-card border border-border-subtle rounded-2xl p-5 space-y-3 hover:border-border-elevated transition flex flex-col justify-between"
             >
-              <FilmCard film={film} />
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-bold text-gold-400 uppercase tracking-wider">{article.category}</span>
+                  <span className="text-text-muted">{article.date}</span>
+                </div>
+                <h3 className="text-xs font-bold text-text-headline leading-snug hover:text-gold-300 transition">
+                  {article.title}
+                </h3>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  {article.desc}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-border-subtle">
+                <span className="text-[11px] font-semibold text-gold-400 flex items-center space-x-1 cursor-pointer hover:underline">
+                  <span>Baca Selengkapnya</span>
+                  <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* 3. STEPS SECTION */}
-      <section className="bg-slate-900/30 border border-slate-900/80 rounded-3xl p-6 sm:p-8 lg:p-10 w-full">
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">Mudah dan Cepat</p>
-          <h2 className="text-2xl font-extrabold text-white mt-1 tracking-tight">Tiga Langkah Menuju Layar Lebar</h2>
+      {/* 6. KEUNGGULAN SISTEM */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <div className="bg-canvas-card border border-border-subtle rounded-xl p-4 flex items-center space-x-3">
+          <div className="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 shrink-0">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-text-headline">Pembayaran Digital Terverifikasi</h4>
+            <p className="text-[10px] text-text-muted">QRIS & Virtual Account otomatis terkonfirmasi</p>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative w-full">
-          {[
-            { step: '01', icon: '🍿', title: 'Pilih Film & Jadwal', desc: 'Temukan film favorit dan waktu tayang yang sesuai dengan harimu.' },
-            { step: '02', icon: '💺', title: 'Tentukan Kursi', desc: 'Lihat ketersediaan real-time dan pilih posisi menonton ternyaman.' },
-            { step: '03', icon: '💳', title: 'Bayar & Nikmati', desc: 'Selesaikan pembayaran dan tiket digitalmu langsung siap digunakan.' }
-          ].map((item, index) => (
-            <article key={index} className="bg-slate-950/60 border border-slate-800/40 rounded-2xl p-5 relative group hover:border-slate-700/80 transition duration-300">
-              <span className="absolute top-4 right-4 text-xs font-black text-slate-800 font-mono group-hover:text-teal-400/20 transition duration-300">{item.step}</span>
-              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shadow-inner">{item.icon}</div>
-              <h3 className="text-sm font-bold text-slate-200 mt-4">{item.title}</h3>
-              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">{item.desc}</p>
-            </article>
-          ))}
+
+        <div className="bg-canvas-card border border-border-subtle rounded-xl p-4 flex items-center space-x-3">
+          <div className="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 shrink-0">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-text-headline">Penguncian Kursi Otomatis</h4>
+            <p className="text-[10px] text-text-muted">Bebas bentrok dengan proteksi sistem real-time</p>
+          </div>
+        </div>
+
+        <div className="bg-canvas-card border border-border-subtle rounded-xl p-4 flex items-center space-x-3">
+          <div className="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 shrink-0">
+            <Ticket className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-text-headline">E-Tiket & Boarding Pass Resmi</h4>
+            <p className="text-[10px] text-text-muted">QR Code digital langsung siap dipindai di pintu studio</p>
+          </div>
         </div>
       </section>
 

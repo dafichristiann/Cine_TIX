@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, MapPin, CheckCircle2 } from 'lucide-react';
 import api, { getApiError } from '../api/axios';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/Status';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -21,55 +22,52 @@ export default function Kursi() {
       .finally(() => setLoading(false));
   }, [id_jadwal]);
 
-  // Mengelompokkan berdasarkan field 'baris' sesuai data model Prisma Anda
   const rows = useMemo(() => {
     const grouped = (schedule?.slots || []).reduce<Record<string, SlotKursi[]>>((result, slot) => {
-      result[slot.kursi.baris] = [...(result[slot.kursi.baris] || []), slot];
+      const row = slot.kursi.baris;
+      result[row] = [...(result[row] || []), slot];
       return result;
     }, {});
 
-    // Mengurutkan nomor_kursi secara numerik di setiap baris agar urutannya pas (A1, A2, ... A10)
-    Object.keys(grouped).forEach((row) => {
-      grouped[row].sort((a, b) => {
-        const numA = parseInt(a.kursi.nomor_kursi.replace(/^\D+/g, ''), 10) || 0;
-        const numB = parseInt(b.kursi.nomor_kursi.replace(/^\D+/g, ''), 10) || 0;
-        return numA - numB;
-      });
+    Object.keys(grouped).forEach((key) => {
+      grouped[key].sort((a, b) => 
+        a.kursi.nomor_kursi.localeCompare(b.kursi.nomor_kursi, undefined, { numeric: true })
+      );
     });
 
-    return Object.fromEntries(Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)));
+    return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
   }, [schedule]);
 
-  const selectedSlots = (schedule?.slots || []).filter((slot) => selected.includes(slot.id_slot));
-  const total = Number(schedule?.harga || 0) * selected.length;
-
-  const toggleSeat = (slot: SlotKursi) => {
+  const toggle = (slot: SlotKursi) => {
     if (slot.status !== 'TERSEDIA') return;
-    setError('');
-    setSelected((current) => current.includes(slot.id_slot)
-      ? current.filter((id) => id !== slot.id_slot)
-      : [...current, slot.id_slot]);
+    setSelected((prev) =>
+      prev.includes(slot.id_slot)
+        ? prev.filter((item) => item !== slot.id_slot)
+        : [...prev, slot.id_slot],
+    );
   };
 
-  const createBooking = async () => {
-    if (!schedule || !selected.length) return;
+  const selectedSeats = useMemo(() => {
+    if (!schedule?.slots) return [];
+    return schedule.slots
+      .filter((slot) => selected.includes(slot.id_slot))
+      .map((slot) => slot.kursi.nomor_kursi);
+  }, [schedule, selected]);
+
+  const total = Number(schedule?.harga || 0) * selected.length;
+
+  const submit = async () => {
+    if (!selected.length) return;
     setSubmitting(true);
     setError('');
     try {
       const response = await api.post<Pemesanan>('/pemesanan', {
-        id_jadwal: schedule.id_jadwal,
-        id_slots: selected,
+        id_jadwal: Number(id_jadwal),
+        slots: selected,
       });
       navigate(`/checkout/${response.data.id_pemesanan}`);
     } catch (requestError) {
-      setError(getApiError(requestError, 'Kursi gagal dipesan. Silakan pilih kembali.'));
-      try {
-        const response = await api.get<Jadwal>(`/jadwal/${id_jadwal}`);
-        setSchedule(response.data);
-        setSelected([]);
-      } catch {
-        // Error fallback
-      }
+      setError(getApiError(requestError, 'Kursi gagal dikunci. Coba pilih kursi lain.'));
     } finally {
       setSubmitting(false);
     }
@@ -78,174 +76,176 @@ export default function Kursi() {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <LoadingState label="Menyiapkan denah kursi..." />
+        <LoadingState label="Memuat denah kursi bioskop..." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 w-full max-w-7xl mx-auto">
       
-      {/* HEADER NAVIGASI */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <Link className="inline-flex items-center space-x-1.5 text-xs font-semibold text-teal-400 hover:text-teal-300 transition" to={`/jadwal/${schedule?.id_film || ''}`}>
-          <span>{"<-"}</span> <span>Ganti Jadwal</span>
+      {/* 1. TOP NAV BREADCRUMB */}
+      <div className="flex items-center justify-between">
+        <Link 
+          to={schedule ? `/jadwal/${schedule.id_film}` : '/film'}
+          className="inline-flex items-center space-x-2 text-xs font-semibold text-gold-400 hover:text-gold-300 transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Ganti Jadwal / Film</span>
         </Link>
-        <div className="text-left sm:text-right">
-          <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block">Langkah 2 dari 3</span>
-          <strong className="text-base font-extrabold text-white">Pilih Posisi Kursi</strong>
-        </div>
+        <span className="text-[11px] text-text-muted font-mono">
+          Lock otomatis: 15 menit
+        </span>
       </div>
 
-      {/* CORE LAYOUT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* PANEL DENAH KURSI (KIRI) */}
-        <section className="lg:col-span-8 bg-slate-900 border border-slate-800/80 rounded-3xl p-6 shadow-lg space-y-10 overflow-hidden">
+        {/* 2. DENAH KURSI (KIRI) */}
+        <section className="lg:col-span-8 bg-canvas-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-xl space-y-8 overflow-hidden">
           
-          <div className="border-b border-slate-800 pb-4">
-            <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">{schedule?.studio.bioskop.nama_bioskop}</p>
-            <h1 className="text-2xl font-extrabold text-white mt-0.5 tracking-tight">{schedule?.film.judul}</h1>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
-              {schedule && formatDate(schedule.tanggal)} <span className="text-slate-600">•</span> {schedule?.jam_mulai} <span className="text-slate-600">•</span> <span className="text-teal-400">{schedule?.studio.nama_studio}</span>
+          <div className="border-b border-border-subtle pb-4">
+            <div className="flex items-center space-x-2 text-gold-400">
+              <MapPin className="w-3.5 h-3.5" />
+              <p className="text-[10px] font-bold tracking-widest uppercase">{schedule?.studio.bioskop.nama_bioskop}</p>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-text-headline mt-1 tracking-tight">{schedule?.film.judul}</h1>
+            <p className="text-xs text-text-muted mt-1 flex items-center space-x-2">
+              <span>{schedule && formatDate(schedule.tanggal)}</span>
+              <span>•</span>
+              <span className="text-text-headline font-mono font-bold">{schedule?.jam_mulai}</span>
+              <span>•</span>
+              <span className="text-gold-400">{schedule?.studio.nama_studio} ({schedule?.studio.tipe})</span>
             </p>
           </div>
 
           {error && <ErrorBanner message={error} />}
 
-          {/* LAYAR BIOSKOP DENGAN EFEK AMBIENT GLOW */}
-          <div className="w-full flex flex-col items-center justify-center space-y-3 pt-4 select-none">
-            <div className="w-4/5 h-2.5 bg-gradient-to-b from-cyan-400/30 via-cyan-400/10 to-transparent rounded-full filter blur-[1px] shadow-[0_-4px_20px_rgba(34,211,238,0.2)]" />
-            <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-slate-500">Layar Bioskop</span>
+          {/* LAYAR BIOSKOP PROYEKTOR (SATIN GOLD GLOW) */}
+          <div className="w-full flex flex-col items-center justify-center space-y-3 pt-2">
+            <div className="w-4/5 h-2.5 bg-gradient-to-r from-transparent via-gold-400/40 to-transparent rounded-t-full shadow-[0_-8px_20px_rgba(212,175,55,0.15)]" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+              LAYAR BIOSKOP UTAMA
+            </span>
           </div>
 
-          {/* AREA DENAH SEAT DENGAN SCROLL HORIZONTAL DAN INTERAKSI PREMIUM */}
-          {(schedule?.slots || []).length ? (
-            <div className="py-6 overflow-x-auto w-full max-w-full custom-scrollbar">
-              <div className="min-w-max space-y-3 px-4 flex flex-col items-center">
-                {Object.entries(rows).map(([row, slots]) => (
-                  <div className="flex items-center space-x-4 w-full justify-center" key={row}>
-                    
-                    {/* Indikator Huruf Baris Kiri */}
-                    <span className="w-6 text-xs font-black font-mono text-slate-500 text-center select-none">
-                      {row}
-                    </span>
-                    
-                    {/* Grid Pembungkus Tombol Kursi */}
-                    <div className="flex items-center gap-2 justify-center">
-                      {slots.map((slot) => {
-                        const isSelected = selected.includes(slot.id_slot);
-                        const isAvailable = slot.status === 'TERSEDIA';
-                        const seatNumber = slot.kursi.nomor_kursi.replace(/[A-Z]/g, '');
+          {/* MATRIKS DENAH */}
+          {rows.length > 0 ? (
+            <div className="overflow-x-auto py-4 flex flex-col items-center space-y-3 scrollbar-thin">
+              {rows.map(([rowName, slots]) => (
+                <div key={rowName} className="flex items-center space-x-2 sm:space-x-3">
+                  <span className="w-5 text-center text-xs font-mono font-bold text-text-muted select-none">
+                    {rowName}
+                  </span>
+                  
+                  <div className="flex items-center space-x-1.5 sm:space-x-2">
+                    {slots.map((slot) => {
+                      const isSelected = selected.includes(slot.id_slot);
+                      const isAvailable = slot.status === 'TERSEDIA';
 
-                        return (
-                          <button
-                            type="button"
-                            key={slot.id_slot}
-                            disabled={!isAvailable}
-                            onClick={() => toggleSeat(slot)}
-                            aria-label={`Kursi ${slot.kursi.nomor_kursi}, ${isSelected ? 'dipilih' : slot.status.toLowerCase()}`}
-                            className={`
-                              w-9 h-9 rounded-lg text-xs font-bold font-mono select-none focus:outline-none
-                              flex items-center justify-center border transition-all duration-200
-                              
-                              /* Efek Taktil Mental saat Ditekan (Bounce Feedback) */
-                              active:scale-90 transform-gpu
-                              
-                              ${isSelected 
-                                ? 'bg-teal-500 border-teal-500 text-slate-950 font-black scale-105 shadow-md shadow-teal-500/30' 
-                                : isAvailable 
-                                  ? 'bg-slate-950 border-slate-800 text-slate-300 hover:border-teal-500/50 hover:text-white hover:shadow-[0_0_12px_rgba(20,184,166,0.15)] hover:scale-105' 
-                                  : 'bg-slate-850 border-slate-850/60 text-slate-600 cursor-not-allowed opacity-30'}
-                            `}
-                          >
-                            {seatNumber}
-                          </button>
-                        );
-                      })}
-                    </div>
+                      let seatStyle = 'bg-canvas-elevated border-border-elevated text-text-muted hover:border-gold-400/60 hover:text-text-headline cursor-pointer';
+                      if (isSelected) {
+                        seatStyle = 'bg-gold-500 border-gold-400 text-text-on-gold font-black shadow-md shadow-gold-500/25 scale-105';
+                      } else if (!isAvailable) {
+                        seatStyle = 'bg-[#0A0E17] border-slate-900/80 text-slate-700 cursor-not-allowed opacity-35';
+                      }
 
-                    {/* Indikator Huruf Baris Kanan */}
-                    <span className="w-6 text-xs font-black font-mono text-slate-500 text-center select-none">
-                      {row}
-                    </span>
-
+                      return (
+                        <button
+                          key={slot.id_slot}
+                          type="button"
+                          disabled={!isAvailable}
+                          onClick={() => toggle(slot)}
+                          aria-label={`Kursi ${slot.kursi.nomor_kursi} - ${slot.status}`}
+                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg border text-[11px] sm:text-xs font-mono font-bold transition duration-150 flex items-center justify-center select-none ${seatStyle}`}
+                        >
+                          {slot.kursi.nomor_kursi.replace(slot.kursi.baris, '')}
+                        </button>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+
+                  <span className="w-5 text-center text-xs font-mono font-bold text-text-muted select-none">
+                    {rowName}
+                  </span>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="bg-slate-950 border border-slate-800/60 rounded-2xl p-8 text-center">
-              <EmptyState title="Kursi belum tersedia" message="Denah layout kursi belum disiapkan." />
-            </div>
+            <EmptyState title="Denah Belum Siap" message="Konfigurasi denah kursi belum diatur untuk jadwal ini." />
           )}
 
-          {/* LEGENDA PETUNJUK */}
-          {(schedule?.slots || []).length > 0 && (
-            <div className="flex items-center justify-center space-x-6 pt-4 border-t border-slate-800/60 text-xs font-medium text-slate-400">
+          {/* LEGENDA */}
+          {rows.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-border-subtle text-xs text-text-muted">
               <span className="flex items-center space-x-2">
-                <span className="w-4 h-4 rounded bg-slate-950 border border-slate-800 inline-block" /> <span>Tersedia</span>
+                <span className="w-4 h-4 rounded bg-canvas-elevated border border-border-elevated inline-block" />
+                <span>Tersedia</span>
               </span>
               <span className="flex items-center space-x-2">
-                <span className="w-4 h-4 rounded bg-teal-500 inline-block" /> <span>Dipilih</span>
+                <span className="w-4 h-4 rounded bg-gold-500 border border-gold-400 inline-block" />
+                <span className="text-text-headline font-medium">Dipilih</span>
               </span>
               <span className="flex items-center space-x-2">
-                <span className="w-4 h-4 rounded bg-slate-850 opacity-30 inline-block" /> <span>Tidak Tersedia</span>
+                <span className="w-4 h-4 rounded bg-[#0A0E17] opacity-40 border border-slate-900 inline-block" />
+                <span>Terisi</span>
               </span>
             </div>
           )}
         </section>
 
-        {/* ASIDE PANEL: RINGKASAN PESANAN (KANAN) */}
-        <aside className="lg:col-span-4 bg-slate-900 border border-slate-800/80 rounded-3xl p-6 shadow-lg space-y-6 sticky top-24">
-          <div>
-            <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">Ringkasan Pesanan</p>
-            <h2 className="text-lg font-extrabold text-white truncate mt-0.5">{schedule?.film.judul}</h2>
+        {/* 3. RINGKASAN PESANAN (KANAN) */}
+        <aside className="lg:col-span-4 bg-canvas-card border border-border-subtle rounded-3xl p-6 shadow-xl space-y-6 sticky top-24">
+          <div className="border-b border-border-subtle pb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gold-400">Ringkasan Pemesanan</h2>
+            <p className="text-xs text-text-muted mt-0.5">Detail tiket yang dipilih</p>
           </div>
 
-          <dl className="space-y-3 text-xs border-y border-slate-800 py-4">
-            <div className="flex justify-between"><dt className="text-slate-500 font-medium">Bioskop</dt><dd className="text-slate-200 font-semibold">{schedule?.studio.bioskop.nama_bioskop}</dd></div>
-            <div className="flex justify-between"><dt className="text-slate-500 font-medium">Waktu Mulai</dt><dd className="text-slate-200 font-semibold font-mono">{schedule?.jam_mulai}</dd></div>
-            <div className="flex justify-between"><dt className="text-slate-500 font-medium">Studio</dt><dd className="text-slate-200 font-semibold">{schedule?.studio.nama_studio} ({schedule?.studio.tipe})</dd></div>
-          </dl>
-
-          <div className="space-y-2">
-            <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Kursi Pilihan</span>
-            {selectedSlots.length ? (
-              <div className="flex flex-wrap gap-1.5 max-h-[100px] overflow-y-auto pr-1">
-                {selectedSlots.map((slot) => (
-                  <strong key={slot.id_slot} className="text-xs font-bold font-mono bg-teal-500/10 border border-teal-500/20 text-teal-400 px-2.5 py-1 rounded-lg">
-                    {slot.kursi.nomor_kursi}
-                  </strong>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 italic">Belum ada kursi yang dipilih</p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-            <div className="leading-tight">
-              <span className="text-[11px] text-slate-500 font-medium block">{selected.length} tiket dipesan</span>
-              <span className="text-[10px] text-teal-500 font-mono">{formatCurrency(schedule?.harga || 0)}/tiket</span>
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between text-text-muted">
+              <span>Film</span>
+              <span className="text-text-headline font-semibold text-right truncate max-w-[180px]">{schedule?.film.judul}</span>
             </div>
-            <strong className="text-xl font-black text-white font-mono">{formatCurrency(total)}</strong>
+            <div className="flex justify-between text-text-muted">
+              <span>Bioskop</span>
+              <span className="text-text-body text-right">{schedule?.studio.bioskop.nama_bioskop}</span>
+            </div>
+            <div className="flex justify-between text-text-muted">
+              <span>Studio</span>
+              <span className="text-text-body font-mono">{schedule?.studio.nama_studio}</span>
+            </div>
+            <div className="flex justify-between text-text-muted">
+              <span>Harga Satuan</span>
+              <span className="text-text-body font-mono">{formatCurrency(schedule?.harga || 0)}</span>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <button
-              type="button"
-              disabled={!selected.length || submitting}
-              onClick={createBooking}
-              className="w-full bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-sm py-3 px-4 rounded-xl disabled:opacity-40 transition shadow-lg shadow-teal-500/5 flex items-center justify-center space-x-2 focus:outline-none"
-            >
-              <span>{submitting ? 'Memproses...' : 'Lanjut ke Pembayaran'}</span>
-              {!submitting && <span className="font-mono text-xs">{"->"}</span>}
-            </button>
-            <small className="block text-[10px] text-slate-500 leading-normal text-center">
-              🔒 Kursi otomatis dikunci selama 15 menit setelah tombol pembayaran ditekan.
-            </small>
+          <div className="p-3.5 bg-canvas-base border border-border-subtle rounded-2xl space-y-2">
+            <div className="flex justify-between text-xs font-medium text-text-muted">
+              <span>Kursi Dipilih ({selected.length})</span>
+              <span className="text-gold-400 font-mono font-bold">
+                {selectedSeats.length ? selectedSeats.join(', ') : 'Belum dipilih'}
+              </span>
+            </div>
           </div>
+
+          <div className="border-t border-border-subtle pt-4 flex items-baseline justify-between">
+            <span className="text-xs text-text-muted font-semibold uppercase">Total Tiket</span>
+            <span className="text-xl font-black text-gold-400 font-mono">{formatCurrency(total)}</span>
+          </div>
+
+          <button
+            type="button"
+            disabled={!selected.length || submitting}
+            onClick={submit}
+            className="w-full bg-gold-500 hover:bg-gold-600 text-text-on-gold font-bold text-xs py-3.5 px-4 rounded-xl disabled:opacity-50 transition shadow-sm shadow-gold-500/20 flex items-center justify-center space-x-2"
+          >
+            <span>{submitting ? 'Mengunci Kursi...' : 'Lanjut ke Menu & Pembayaran'}</span>
+            <CheckCircle2 className="w-4 h-4" />
+          </button>
+
+          <p className="text-[11px] text-text-disabled text-center leading-normal">
+            Setelah klik lanjut, kursi terkunci aman dan Anda dapat memilih paket makanan & minuman bioskop.
+          </p>
         </aside>
 
       </div>

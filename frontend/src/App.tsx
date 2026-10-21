@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import MagicLinkVerify from './pages/Auth/MagicLinkVerify';
 import FilmList from './pages/Film';
 import Jadwal from './pages/Jadwal';
 import Kursi from './pages/Kursi';
@@ -45,6 +46,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/auth/magic-link" element={<MagicLinkVerify />} />
             <Route path="/film" element={<FilmList />} />
             <Route path="/jadwal/:id_film" element={<Jadwal />} />
             <Route path="/kursi/:id_jadwal" element={<PrivateRoute><Kursi /></PrivateRoute>} />

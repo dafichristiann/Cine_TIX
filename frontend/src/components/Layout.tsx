@@ -1,224 +1,419 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { 
+  MapPin, 
+  Ticket, 
+  Shield, 
+  Menu, 
+  X, 
+  LogIn, 
+  UserPlus, 
+  Info,
+  ChevronDown
+} from 'lucide-react';
 import { useAuth } from '../context/auth';
 import UserMenu from './UserMenu';
+import api from '../api/axios';
+import type { Bioskop } from '../types';
 
 export default function Layout() {
   const { user, isAuthenticated } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showCaraPesan, setShowCaraPesan] = useState(false); // State untuk mengontrol Modal Cara Pesan
-  
-  const closeMenu = () => setSidebarOpen(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('Jakarta');
+  const [cities, setCities] = useState<string[]>(['Jakarta', 'Surabaya', 'Bandung', 'Yogyakarta', 'Medan']);
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const location = useLocation();
 
-  // Link Navigasi Dasar
-  const navigationLinks = [
-    { path: '/', label: 'Beranda', icon: '🏠' },
-    { path: '/film', label: 'Film', icon: '🎬' },
-  ];
+  useEffect(() => {
+    api.get<Bioskop[]>('/bioskop')
+      .then((res) => {
+        const uniqueCities = Array.from(new Set(res.data.map((b) => b.kota).filter(Boolean)));
+        if (uniqueCities.length) setCities(uniqueCities);
+      })
+      .catch(() => {});
+  }, []);
 
-  // Data Langkah Cara Pemesanan Tiket
-  const alurPemesanan = [
-    { step: '01', title: 'Pilih Film & Jadwal', desc: 'Jelajahi katalog film yang sedang tayang, lalu pilih jadwal bioskop yang Anda inginkan.' },
-    { step: '02', title: 'Tentukan Kursi', desc: 'Pilih posisi kursi terbaik Anda langsung melalui peta kursi interaktif yang tersedia.' },
-    { step: '03', title: 'Pembayaran Aman', desc: 'Selesaikan transaksi secara instan melalui berbagai metode pembayaran digital pilihan Anda.' },
-    { step: '04', title: 'Terima E-Tiket', desc: 'Tiket digital otomatis tersimpan di akun Anda dan siap di-scan saat tiba di bioskop.' }
+  // Close menus on page navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setCityDropdownOpen(false);
+  }, [location.pathname]);
+
+  const navLinks = [
+    { path: '/', label: 'Beranda' },
+    { path: '/film', label: 'Film & Jadwal' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row">
+    <div className="min-h-screen bg-canvas-base text-text-body font-sans flex flex-col antialiased selection:bg-gold-500/20 selection:text-gold-300">
       
-      {/* 1. HEADER KHUSUS MOBILE */}
-      <header className="md:hidden w-full bg-slate-900 border-b border-slate-800/80 px-5 py-4 flex items-center justify-between sticky top-0 z-30">
-        <Link className="flex items-center space-x-2 font-bold text-white tracking-tight" to="/" onClick={closeMenu}>
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-sm">C</div>
-          <span>Cine<span className="text-teal-400">Tix</span></span>
-        </Link>
-        <button 
-          className="text-slate-400 hover:text-white focus:outline-none p-1" 
-          type="button" 
-          onClick={() => setSidebarOpen((open) => !open)} 
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? '✕' : '☰'}
-        </button>
+      {/* 1. TOP HEADER / APP BAR (CINEMA XXI / TIX ID ROYAL MIDNIGHT & SATIN GOLD) */}
+      <header className="sticky top-0 z-40 w-full bg-canvas-card/95 backdrop-blur-md border-b border-border-subtle shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            
+            {/* BRAND LOGO & CITY SELECTOR */}
+            <div className="flex items-center space-x-6">
+              <Link className="flex items-center space-x-2.5 group" to="/">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-black text-text-on-gold text-lg shadow-md shadow-gold-500/10 group-hover:scale-105 transition">
+                  C
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-black text-text-headline text-xl tracking-tight leading-none group-hover:text-gold-400 transition">
+                    Cine<span className="text-gold-400">Tix</span>
+                  </span>
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-0.5">
+                    Cinema Network
+                  </span>
+                </div>
+              </Link>
+
+              {/* CITY PICKER (21 CINEPLEX / TIX ID SIGNATURE) */}
+              <div className="relative hidden md:block">
+                <button
+                  type="button"
+                  onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-canvas-elevated border border-border-elevated hover:border-gold-500/40 text-xs font-semibold text-text-headline transition"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-gold-400" />
+                  <span>{selectedCity}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
+                </button>
+
+                {cityDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setCityDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 mt-2 z-50 w-48 bg-canvas-floating border border-border-elevated rounded-xl shadow-2xl py-1 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3 py-1.5 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border-subtle">
+                        Pilih Kota Bioskop
+                      </div>
+                      {cities.map((city) => (
+                        <button
+                          key={city}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCity(city);
+                            setCityDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs font-medium transition flex items-center justify-between ${
+                            selectedCity === city
+                              ? 'bg-gold-500/10 text-gold-400 font-bold'
+                              : 'text-text-body hover:bg-canvas-elevated'
+                          }`}
+                        >
+                          <span>{city}</span>
+                          {selectedCity === city && <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* DESKTOP NAVIGATION LINKS */}
+            <nav className="hidden md:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  end={link.path === '/'}
+                  className={({ isActive }) => `
+                    px-4 py-2 rounded-xl text-xs font-bold transition
+                    ${isActive 
+                      ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' 
+                      : 'text-text-body hover:text-text-headline hover:bg-canvas-elevated'}
+                  `}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+
+              {isAuthenticated && (
+                <NavLink
+                  to="/tiket-saya"
+                  className={({ isActive }) => `
+                    flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition
+                    ${isActive 
+                      ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' 
+                      : 'text-text-body hover:text-text-headline hover:bg-canvas-elevated'}
+                  `}
+                >
+                  <Ticket className="w-3.5 h-3.5" />
+                  <span>Tiket Saya</span>
+                </NavLink>
+              )}
+
+              {user?.role?.toLowerCase() === 'admin' && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => `
+                    flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold transition
+                    ${isActive 
+                      ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' 
+                      : 'text-text-body hover:text-text-headline hover:bg-canvas-elevated'}
+                  `}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </NavLink>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(true)}
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-medium text-text-muted hover:text-text-headline hover:bg-canvas-elevated transition"
+              >
+                <Info className="w-3.5 h-3.5" />
+                <span>Panduan</span>
+              </button>
+            </nav>
+
+            {/* USER ACTIONS (RIGHT) */}
+            <div className="hidden md:flex items-center space-x-3">
+              {isAuthenticated ? (
+                <div className="w-60">
+                  <UserMenu />
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/login"
+                    className="flex items-center space-x-1.5 text-xs font-semibold text-text-body hover:text-text-headline px-3.5 py-2 rounded-xl border border-border-elevated hover:bg-canvas-elevated transition"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Masuk</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center space-x-1.5 text-xs font-bold bg-gold-500 hover:bg-gold-600 text-text-on-gold px-4 py-2 rounded-xl transition shadow-sm shadow-gold-500/15"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Daftar</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* MOBILE MENU TOGGLE BUTTON */}
+            <div className="flex md:hidden items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-xl bg-canvas-elevated border border-border-subtle text-text-body hover:text-text-headline focus:outline-none"
+                aria-label="Toggle navigation menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* MOBILE MENU ACCORDION */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-canvas-card border-b border-border-subtle px-4 pt-2 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            {/* Mobile City Selector */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-canvas-elevated border border-border-subtle">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-gold-400" />
+                <span className="text-xs text-text-muted">Kota Bioskop:</span>
+              </div>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="bg-transparent text-xs font-bold text-text-headline border-0 focus:outline-none"
+              >
+                {cities.map((c) => (
+                  <option key={c} value={c} className="bg-canvas-card text-text-headline">
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <nav className="space-y-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  end={link.path === '/'}
+                  className={({ isActive }) => `
+                    block px-3 py-2.5 rounded-xl text-xs font-bold transition
+                    ${isActive ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' : 'text-text-body hover:bg-canvas-elevated'}
+                  `}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+
+              {isAuthenticated && (
+                <NavLink
+                  to="/tiket-saya"
+                  className={({ isActive }) => `
+                    flex items-center space-x-2 px-3 py-2.5 rounded-xl text-xs font-bold transition
+                    ${isActive ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' : 'text-text-body hover:bg-canvas-elevated'}
+                  `}
+                >
+                  <Ticket className="w-4 h-4" />
+                  <span>Tiket Saya</span>
+                </NavLink>
+              )}
+
+              {user?.role?.toLowerCase() === 'admin' && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => `
+                    flex items-center space-x-2 px-3 py-2.5 rounded-xl text-xs font-bold transition
+                    ${isActive ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' : 'text-text-body hover:bg-canvas-elevated'}
+                  `}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>Admin Panel</span>
+                </NavLink>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(true)}
+                className="w-full text-left flex items-center space-x-2 px-3 py-2.5 rounded-xl text-xs font-medium text-text-muted hover:text-text-headline hover:bg-canvas-elevated transition"
+              >
+                <Info className="w-4 h-4" />
+                <span>Panduan Pemesanan</span>
+              </button>
+            </nav>
+
+            <div className="pt-2 border-t border-border-subtle">
+              {isAuthenticated ? (
+                <UserMenu />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    className="text-center py-2 text-xs font-semibold text-text-body bg-canvas-elevated border border-border-subtle rounded-xl"
+                  >
+                    Masuk
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="text-center py-2 text-xs font-bold text-text-on-gold bg-gold-500 rounded-xl"
+                  >
+                    Daftar
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* 2. SIDEBAR UTAMA */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between transform transition-transform duration-300 ease-in-out
-        md:translate-x-0 md:static md:h-screen
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div>
-          {/* Logo Branding - Desktop */}
-          <div className="hidden md:flex p-6 border-b border-slate-800/60 items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-lg shadow-md shadow-teal-500/20">
-              C
+      {/* 2. MAIN BODY CONTENT */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <Outlet />
+      </main>
+
+      {/* 3. FOOTER */}
+      <footer className="w-full bg-[#06090F] border-t border-border-subtle mt-16 text-text-muted text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-border-subtle">
+            
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-7 h-7 rounded-lg bg-gold-500 flex items-center justify-center font-black text-text-on-gold text-sm">
+                  C
+                </div>
+                <span className="font-black text-text-headline text-base tracking-tight">Cine<span className="text-gold-400">Tix</span></span>
+              </div>
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                Platform reservasi tiket bioskop terintegrasi di Indonesia. Pesan tiket, pilih kursi favorit secara real-time, nikmati popcorn khas bioskop, dan dapatkan e-tiket digital instan.
+              </p>
             </div>
-            <span className="font-extrabold text-white text-lg tracking-tight">Cine<span className="text-teal-400">Tix</span></span>
+
+            <div className="space-y-2.5">
+              <h4 className="text-[11px] font-bold text-text-headline uppercase tracking-wider">Layanan Penonton</h4>
+              <ul className="space-y-1.5 text-[11px]">
+                <li><Link to="/film" className="hover:text-gold-400 transition">Film Sedang Tayang</Link></li>
+                <li><Link to="/film" className="hover:text-gold-400 transition">Segera Hadir</Link></li>
+                <li><Link to="/tiket-saya" className="hover:text-gold-400 transition">E-Tiket & Boarding Pass</Link></li>
+                <li><button type="button" onClick={() => setShowGuideModal(true)} className="hover:text-gold-400 transition">Cara Pesan Tiket</button></li>
+              </ul>
+            </div>
+
+            <div className="space-y-2.5">
+              <h4 className="text-[11px] font-bold text-text-headline uppercase tracking-wider">Jaringan Bioskop</h4>
+              <ul className="space-y-1.5 text-[11px]">
+                <li>Cinema XXI & The Premiere</li>
+                <li>CGV Cinemas Indonesia</li>
+                <li>Cinépolis Cinema</li>
+                <li>Studio IMAX & Dolby Atmos</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2.5">
+              <h4 className="text-[11px] font-bold text-text-headline uppercase tracking-wider">Keamanan & Pembayaran</h4>
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                Transaksi dilindungi dengan enkripsi TLS 256-bit dan verifikasi resmi via SMTP Mailer. Mendukung pembayaran QRIS nasional, BCA, Mandiri, BRI, dan Kartu Pembayaran.
+              </p>
+            </div>
+
           </div>
 
-          {/* List Navigasi Menu */}
-          <nav className="p-4 space-y-1 mt-4 md:mt-0">
-            {navigationLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                end={link.path === '/'}
-                onClick={closeMenu}
-                className={({ isActive }) => `
-                  flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition
-                  ${isActive 
-                    ? 'bg-gradient-to-r from-teal-500/10 to-transparent border border-teal-500/20 text-teal-400 font-semibold' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}
-                `}
-              >
-                <span className="text-base">{link.icon}</span>
-                <span>{link.label}</span>
-              </NavLink>
-            ))}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-text-disabled">
+            <p>&copy; 2026 CineTix Cinema Network. Seluruh hak cipta dilindungi.</p>
+            <div className="flex items-center space-x-6">
+              <span>Syarat & Ketentuan</span>
+              <span>Kebijakan Privasi</span>
+              <span>Bantuan Penonton</span>
+            </div>
+          </div>
+        </div>
+      </footer>
 
-            {isAuthenticated && (
-              <NavLink
-                to="/tiket-saya"
-                onClick={closeMenu}
-                className={({ isActive }) => `
-                  flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition
-                  ${isActive 
-                    ? 'bg-gradient-to-r from-teal-500/10 to-transparent border border-teal-500/20 text-teal-400 font-semibold' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}
-                `}
-              >
-                <span className="text-base">🎟️</span>
-                <span>Tiket Saya</span>
-              </NavLink>
-            )}
-
-            {user?.role?.toLowerCase() === 'admin' && (
-              <NavLink
-                to="/admin"
-                onClick={closeMenu}
-                className={({ isActive }) => `
-                  flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition
-                  ${isActive 
-                    ? 'bg-gradient-to-r from-teal-500/10 to-transparent border border-teal-500/20 text-teal-400 font-semibold' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}
-                `}
-              >
-                <span className="text-base">⚡</span>
-                <span>Admin Panel</span>
-              </NavLink>
-            )}
-
-            {/* Tombol Trigger Modal Cara Pesan Modern */}
-            <button 
+      {/* 4. MODAL CARA PESAN */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas-base/80 backdrop-blur-sm">
+          <div className="bg-canvas-card border border-border-elevated rounded-2xl max-w-lg w-full p-6 relative shadow-2xl animate-in zoom-in-95 duration-150">
+            <button
               type="button"
-              onClick={() => { setShowCaraPesan(true); closeMenu(); }}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition text-left focus:outline-none"
+              onClick={() => setShowGuideModal(false)}
+              className="absolute top-4 right-4 text-text-muted hover:text-text-headline p-1 rounded-lg hover:bg-canvas-elevated"
             >
-              <span className="text-base">❓</span>
-              <span>Cara Pesan</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Profil & Aksi Autentikasi */}
-        <div className="p-4 border-t border-slate-800/60 bg-slate-900/40">
-          {isAuthenticated ? (
-            <div className="flex items-center justify-center md:justify-start">
-              <UserMenu />
-            </div>
-          ) : (
-            <div className="flex flex-col space-y-2">
-              <Link className="text-center text-sm font-medium text-slate-300 hover:text-white py-2 transition" to="/login" onClick={closeMenu}>Masuk</Link>
-              <Link className="text-center text-sm font-semibold bg-teal-500 hover:bg-teal-400 text-slate-950 py-2.5 px-4 rounded-xl transition shadow-md shadow-teal-500/10" to="/register" onClick={closeMenu}>Daftar Sekarang</Link>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* Overlay Background saat Sidebar Mobile Terbuka */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm md:hidden" onClick={closeMenu} />
-      )}
-
-      {/* 3. MODAL DIALOG POP-UP: CARA PESAN */}
-      {showCaraPesan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl shadow-teal-950/20 animate-in fade-in zoom-in-95 duration-200">
-            {/* Tombol Tutup Modal */}
-            <button 
-              type="button" 
-              onClick={() => setShowCaraPesan(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm transition focus:outline-none"
-            >
-              ✕
+              <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-6">
-              <span className="text-xs font-bold tracking-widest text-teal-400 uppercase">Panduan Pengguna</span>
-              <h2 className="text-2xl font-extrabold text-white mt-1">Langkah Mudah Memesan Tiket</h2>
-              <p className="text-sm text-slate-400 mt-1">Ikuti 4 alur sederhana berikut untuk mulai menikmati film pilihan Anda di bioskop CineTix.</p>
-            </div>
+            <h3 className="text-base font-bold text-text-headline mb-1">Panduan Pemesanan Tiket</h3>
+            <p className="text-xs text-text-muted mb-6">Nikmati pengalaman menonton film dalam 4 langkah mudah:</p>
 
-            {/* Grid Alur Sistem */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {alurPemesanan.map((item, idx) => (
-                <div key={idx} className="bg-slate-950 border border-slate-800/60 rounded-xl p-4 flex flex-col space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-teal-500/30 tracking-wider font-mono">{item.step}</span>
-                    <span className="w-2 h-2 rounded-full bg-teal-500/20 border border-teal-500/40" />
+            <div className="space-y-3.5">
+              {[
+                { step: '01', title: 'Pilih Film & Jadwal', desc: 'Jelajahi film yang sedang tayang, pilih cabang bioskop terdekat dan waktu tayang yang sesuai.' },
+                { step: '02', title: 'Tentukan Nomor Kursi', desc: 'Pilih posisi kursi terbaik melalui denah interaktif real-time dengan status terkunci aman.' },
+                { step: '03', title: 'Pilih Camilan F&B & Promo', desc: 'Tambahkan paket popcorn atau camilan favorit, lalu masukkan kode voucher diskon bila ada.' },
+                { step: '04', title: 'E-Tiket & Boarding Pass', desc: 'Selesaikan transaksi dengan QRIS atau Virtual Account, dapatkan QR Code digital resmi.' },
+              ].map((item, idx) => (
+                <div key={idx} className="flex space-x-3 bg-canvas-elevated p-3 rounded-xl border border-border-subtle">
+                  <span className="font-mono text-xs font-bold text-gold-400 shrink-0">{item.step}</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-text-headline">{item.title}</h4>
+                    <p className="text-[11px] text-text-muted leading-relaxed mt-0.5">{item.desc}</p>
                   </div>
-                  <strong className="text-sm font-semibold text-slate-200">{item.title}</strong>
-                  <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
-              <button 
-                type="button" 
-                onClick={() => setShowCaraPesan(false)}
-                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-sm px-5 py-2 rounded-xl transition"
+            <div className="mt-6 pt-4 border-t border-border-subtle flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                className="bg-gold-500 hover:bg-gold-600 text-text-on-gold font-bold text-xs px-5 py-2 rounded-xl transition shadow-sm"
               >
-                Mengerti, Siap Pesan!
+                Tutup
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* 4. KONTEN UTAMA DAN FOOTER */}
-      <div className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-y-auto bg-slate-950">
-        <main className="flex-grow p-6 sm:p-8 md:p-10">
-          <Outlet />
-        </main>
-
-        <footer className="bg-slate-900/40 border-t border-slate-900 px-6 py-8 sm:px-10">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
-            <div>
-              <Link className="flex items-center space-x-2 font-bold text-white text-base" to="/">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xs">C</div>
-                <span>Cine<span className="text-teal-400">Tix</span></span>
-              </Link>
-              <p className="text-slate-400 mt-3 leading-relaxed">Pesan tiket bioskop favoritmu dengan lebih cepat, aman, dan tanpa antre.</p>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <strong className="text-white font-semibold">Navigasi</strong>
-              <Link to="/film" className="text-slate-400 hover:text-teal-400 transition w-max">Film Terkini</Link>
-              <button onClick={() => setShowCaraPesan(true)} className="text-slate-400 hover:text-teal-400 transition w-max text-left">Cara Pemesanan</button>
-            </div>
-            <div className="flex flex-col space-y-1">
-              <strong className="text-white font-semibold mb-1">Bantuan</strong>
-              <a href="mailto:support@cinetix.id" className="text-teal-400 hover:underline font-medium w-max">support@cinetix.id</a>
-              <span className="text-slate-500 text-xs">Layanan: Setiap hari, 09.00 - 22.00</span>
-            </div>
-          </div>
-          <div className="max-w-7xl mx-auto border-t border-slate-900/60 mt-8 pt-4 text-center text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} CineTix. Dibuat untuk pengalaman nonton terbaik.
-          </div>
-        </footer>
-      </div>
 
     </div>
   );

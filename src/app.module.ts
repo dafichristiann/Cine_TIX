@@ -16,12 +16,16 @@ import { SlotKursiModule } from './slot-kursi/slot-kursi.module';
 import { PembayaranModule } from './pembayaran/pembayaran.module';
 import { NotifikasiModule } from './notifikasi/notifikasi.module';  
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
+import { CinemaFeaturesModule } from './cinema-features/cinema-features.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    MailModule,
+    CinemaFeaturesModule,
     AuthModule,
     PrismaModule,
     PenggunaModule,

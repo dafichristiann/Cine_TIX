@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, MapPin } from 'lucide-react';
 import api, { getApiError } from '../api/axios';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/Status';
 import PosterImage from '../components/PosterImage';
@@ -10,6 +11,8 @@ export default function Jadwal() {
   const { id_film } = useParams();
   const [film, setFilm] = useState<Film | null>(null);
   const [schedules, setSchedules] = useState<JadwalType[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('Semua');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,138 +24,268 @@ export default function Jadwal() {
       .then(([filmResponse, scheduleResponse]) => { 
         setFilm(filmResponse.data); 
         setSchedules(scheduleResponse.data); 
+        // Default to first available date
+        if (scheduleResponse.data.length > 0) {
+          const firstDate = scheduleResponse.data[0].tanggal.slice(0, 10);
+          setSelectedDate(firstDate);
+        }
       })
       .catch((requestError: unknown) => setError(getApiError(requestError)))
       .finally(() => setLoading(false));
   }, [id_film]);
 
-  const grouped = useMemo(() => schedules.reduce<Record<string, JadwalType[]>>((result, schedule) => {
-    const key = schedule.tanggal.slice(0, 10);
-    result[key] = [...(result[key] || []), schedule];
-    return result;
-  }, {}), [schedules]);
+  // Unique dates from schedules
+  const availableDates = useMemo(() => {
+    const dates = Array.from(new Set(schedules.map((s) => s.tanggal.slice(0, 10)))).sort();
+    return dates;
+  }, [schedules]);
+
+  // Available cities from bioskops in schedules
+  const cities = useMemo(() => {
+    const citySet = new Set(schedules.map((s) => s.studio.bioskop.kota).filter(Boolean));
+    return ['Semua', ...Array.from(citySet)];
+  }, [schedules]);
+
+  // Filter schedules by selected date & city
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      const matchDate = !selectedDate || s.tanggal.slice(0, 10) === selectedDate;
+      const matchCity = selectedCity === 'Semua' || s.studio.bioskop.kota === selectedCity;
+      return matchDate && matchCity;
+    });
+  }, [schedules, selectedDate, selectedCity]);
+
+  // Group schedules by Cinema (Bioskop)
+  const groupedByCinema = useMemo(() => {
+    const map = new Map<number, { bioskop: JadwalType['studio']['bioskop']; studios: Map<string, JadwalType[]> }>();
+
+    filteredSchedules.forEach((sch) => {
+      const bioId = sch.studio.bioskop.id_bioskop;
+      if (!map.has(bioId)) {
+        map.set(bioId, {
+          bioskop: sch.studio.bioskop,
+          studios: new Map(),
+        });
+      }
+
+      const studioGroup = map.get(bioId)!;
+      const studioKey = `${sch.studio.nama_studio}__${sch.studio.tipe}__${sch.harga}`;
+      if (!studioGroup.studios.has(studioKey)) {
+        studioGroup.studios.set(studioKey, []);
+      }
+      studioGroup.studios.get(studioKey)!.push(sch);
+    });
+
+    return Array.from(map.values());
+  }, [filteredSchedules]);
+
+  const getRatingBadge = (rating: string) => {
+    const r = (rating || 'SU').toUpperCase();
+    if (r.includes('21')) return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+    if (r.includes('17')) return 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+    if (r.includes('13')) return 'bg-gold-500/15 text-gold-400 border-gold-500/30';
+    return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+  };
 
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <LoadingState label="Mencari jadwal tayang..." />
+        <LoadingState label="Mencari jadwal tayang bioskop..." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 w-full">
+    <div className="space-y-8 animate-in fade-in duration-500 w-full max-w-7xl mx-auto">
       
-      {/* 1. HERO SECTION: DETAIL FILM */}
-      <section className="relative overflow-hidden bg-slate-900 border border-slate-800/60 rounded-3xl p-6 sm:p-8 lg:p-10 w-full">
-        {/* Ambient Blur Background */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-[100px] pointer-events-none" />
-        
-        <div className="relative grid grid-cols-1 md:grid-cols-12 gap-8 items-start w-full">
-          {/* Sisi Kiri: Poster Film (Responsive & Proporsional) */}
-          <div className="md:col-span-4 lg:col-span-3 max-w-[240px] w-full mx-auto md:mx-0 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl flex items-center justify-center">
-            {film && <PosterImage film={film} className="w-full h-auto object-contain object-center" />}
+      {/* 1. MOVIE DETAIL HERO */}
+      <section className="bg-canvas-card border border-border-subtle rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          
+          {/* POSTER (2:3 RATIO) */}
+          <div className="md:col-span-4 lg:col-span-3 max-w-[220px] w-full mx-auto md:mx-0 rounded-2xl overflow-hidden border border-border-subtle shadow-2xl bg-canvas-base aspect-[2/3] relative">
+            {film && <PosterImage film={film} className="w-full h-full object-cover object-center" />}
+            <span className={`absolute top-2.5 right-2.5 text-[10px] font-black px-2 py-0.5 rounded shadow ${getRatingBadge(film?.rating || 'SU')}`}>
+              {film?.rating || 'SU'}
+            </span>
           </div>
           
-          {/* Sisi Kanan: Deskripsi & Metadata */}
-          <div className="md:col-span-8 lg:col-span-9 space-y-5">
-            <Link className="inline-flex items-center space-x-1.5 text-xs font-semibold text-teal-400 hover:text-teal-300 transition" to="/film">
-              <span>{"<-"}</span> <span>Kembali ke film</span>
+          {/* DETAIL META */}
+          <div className="md:col-span-8 lg:col-span-9 space-y-4">
+            <Link 
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-gold-400 hover:text-gold-300 transition" 
+              to="/film"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Katalog Film</span>
             </Link>
             
-            <div className="space-y-2">
-              <p className="text-[10px] font-bold text-teal-400 tracking-widest uppercase">{film?.genre}</p>
-              <h1 className="text-3xl font-black text-white tracking-tight leading-tight">{film?.judul}</h1>
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-gold-400 tracking-wider uppercase">{film?.genre}</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-headline tracking-tight leading-tight">
+                {film?.judul}
+              </h1>
             </div>
             
-            {/* Metadata Badges */}
-            <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-300">
-              <span className="bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800 text-teal-400 font-extrabold">{film?.rating}</span>
-              <span className="bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800 font-mono">{film?.durasi} menit</span>
-              <span className="bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800 capitalize">{film?.bahasa}</span>
+            {/* TAGS */}
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-text-body pt-1">
+              <span className="bg-canvas-elevated px-3 py-1 rounded-lg border border-border-elevated text-gold-400">
+                {film?.durasi} Menit
+              </span>
+              <span className="bg-canvas-elevated px-3 py-1 rounded-lg border border-border-elevated capitalize">
+                Audio: {film?.bahasa || 'Indonesia'}
+              </span>
+              <span className="bg-canvas-elevated px-3 py-1 rounded-lg border border-border-elevated">
+                Studio 2D / IMAX
+              </span>
             </div>
             
-            <div className="pt-4 border-t border-slate-800/60 space-y-2">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sinopsis</h2>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-4xl">{film?.sinopsis}</p>
+            {/* SINOPSIS */}
+            <div className="pt-3 border-t border-border-subtle space-y-1.5">
+              <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Sinopsis Cerita</h2>
+              <p className="text-xs text-text-body leading-relaxed max-w-3xl">
+                {film?.sinopsis || 'Sinopsis resmi untuk film ini belum ditambahkan.'}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. JADWAL TAYANG SECTION */}
-      <section className="space-y-6 w-full">
-        <div className="border-b border-slate-800 pb-4">
-          <p className="text-xs font-bold tracking-widest text-teal-400 uppercase">Pilih Waktu</p>
-          <h2 className="text-xl font-extrabold text-white mt-0.5">Jadwal Tayang Tersedia</h2>
+      {/* 2. DATE SELECTOR PILLS */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-text-headline">Pilih Tanggal Penayangan</h2>
+          {cities.length > 1 && (
+            <div className="flex items-center space-x-1.5 text-xs">
+              <MapPin className="w-3.5 h-3.5 text-gold-400" />
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="bg-canvas-elevated border border-border-elevated text-text-headline text-xs rounded-lg px-2.5 py-1 focus:outline-none"
+              >
+                {cities.map((city) => (
+                  <option key={city} value={city} className="bg-canvas-card">{city}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
+        {/* Horizontal Date Picker */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+          {availableDates.length > 0 ? (
+            availableDates.map((dateStr) => {
+              const isSelected = selectedDate === dateStr;
+              const dateObj = new Date(dateStr);
+              const dayName = formatDate(dateStr, { weekday: 'short' });
+              const dayNum = dateObj.getDate();
+              const monthName = formatDate(dateStr, { month: 'short' });
+
+              return (
+                <button
+                  key={dateStr}
+                  type="button"
+                  onClick={() => setSelectedDate(dateStr)}
+                  className={`flex flex-col items-center justify-center min-w-[85px] py-2.5 px-3 rounded-2xl border transition duration-150 ${
+                    isSelected
+                      ? 'bg-gold-500 border-gold-400 text-text-on-gold font-bold shadow-md shadow-gold-500/20'
+                      : 'bg-canvas-card border-border-subtle text-text-muted hover:text-text-headline hover:border-border-elevated'
+                  }`}
+                >
+                  <span className="text-[10px] uppercase font-bold tracking-wider">{dayName}</span>
+                  <span className={`text-base font-black ${isSelected ? 'text-text-on-gold' : 'text-text-headline'}`}>{dayNum}</span>
+                  <span className="text-[9px] uppercase">{monthName}</span>
+                </button>
+              );
+            })
+          ) : (
+            <div className="text-xs text-text-muted py-2">Belum ada tanggal tayang tersedia.</div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. CINEMA & SHOWTIME LISTINGS */}
+      <section className="space-y-4">
         {error && <ErrorBanner message={error} />}
 
-        {!schedules.length ? (
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-12 text-center shadow-inner">
-            <EmptyState title="Belum ada jadwal" message="Jadwal tayang untuk film ini belum tersedia di cabang manapun." />
+        {!groupedByCinema.length ? (
+          <div className="bg-canvas-card border border-border-subtle rounded-2xl p-12 text-center">
+            <EmptyState 
+              title="Jadwal Tidak Tersedia" 
+              message="Belum ada jadwal tayang untuk tanggal atau kota yang dipilih. Silakan pilih tanggal atau cabang lain." 
+            />
           </div>
         ) : (
-          <div className="space-y-8 w-full">
-            {Object.entries(grouped).map(([date, items]) => (
-              <div className="space-y-4 w-full" key={date}>
-                
-                {/* Judul Tanggal Hari */}
-                <div className="flex items-baseline space-x-2 text-sm">
-                  <strong className="text-white font-black capitalize tracking-wide">
-                    {formatDate(date, { weekday: 'long' })}
-                  </strong>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-slate-400 font-medium">
-                    {formatDate(date, { day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="space-y-4">
+            {groupedByCinema.map(({ bioskop, studios }) => (
+              <div 
+                key={bioskop.id_bioskop} 
+                className="bg-canvas-card border border-border-subtle rounded-2xl overflow-hidden shadow-md"
+              >
+                {/* Cinema Header */}
+                <div className="p-4 sm:p-5 border-b border-border-subtle bg-canvas-base/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-gold-400 shrink-0" />
+                      <h3 className="text-sm sm:text-base font-black text-text-headline uppercase tracking-tight">
+                        {bioskop.nama_bioskop}
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-text-muted pl-6">
+                      {bioskop.alamat}, {bioskop.kota}
+                    </p>
+                  </div>
+
+                  <span className="text-[10px] font-bold text-text-muted bg-canvas-elevated px-3 py-1 rounded-full border border-border-subtle self-start sm:self-auto">
+                    {bioskop.kota}
                   </span>
                 </div>
 
-                {/* Grid Barisan Studio / Bioskop */}
-                <div className="grid grid-cols-1 gap-3 w-full">
-                  {items.map((schedule) => (
-                    <article 
-                      className="bg-slate-900 border border-slate-800/80 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-700/80 transition duration-200 shadow-md w-full" 
-                      key={schedule.id_jadwal}
-                    >
-                      {/* Cabang Bioskop & Info Ruangan */}
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-slate-200">{schedule.studio.bioskop.nama_bioskop}</h3>
-                        <p className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5">
-                          <span>{schedule.studio.bioskop.kota}</span> 
-                          <span className="text-slate-700">/</span> 
-                          <span>{schedule.studio.nama_studio}</span> 
-                          <span className="text-slate-700">/</span> 
-                          <span className="text-teal-400 font-semibold bg-teal-500/5 px-2 py-0.5 rounded border border-teal-500/10 text-[10px] tracking-wide uppercase">
-                            {schedule.studio.tipe}
-                          </span>
-                        </p>
-                      </div>
+                {/* Cinema Studios & Showtimes */}
+                <div className="p-4 sm:p-5 space-y-5">
+                  {Array.from(studios.entries()).map(([studioKey, items]) => {
+                    const firstItem = items[0];
+                    return (
+                      <div key={studioKey} className="space-y-3 pb-4 last:pb-0 border-b last:border-b-0 border-border-subtle">
+                        {/* Studio Type & Price */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-bold text-text-headline uppercase">
+                              {firstItem.studio.nama_studio}
+                            </span>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-gold-500/15 border border-gold-500/30 text-gold-400">
+                              {firstItem.studio.tipe}
+                            </span>
+                          </div>
 
-                      {/* Jam Operasional & Aksi Penjualan */}
-                      <div className="flex flex-wrap items-center gap-4 sm:gap-6 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800/40">
-                        <div className="leading-tight">
-                          <strong className="block text-base font-black text-white font-mono">{schedule.jam_mulai}</strong>
-                          <small className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mt-0.5">s.d {schedule.jam_selesai}</small>
-                        </div>
-                        
-                        <div className="text-left sm:text-right sm:min-w-[100px]">
-                          <span className="block text-sm font-black text-teal-400 font-mono">
-                            {formatCurrency(schedule.harga)}
-                          </span>
-                          <span className="text-[9px] text-slate-500 font-semibold block uppercase tracking-wider">per tiket</span>
+                          <div className="text-right">
+                            <span className="text-xs font-extrabold text-gold-400 font-mono">
+                              {formatCurrency(firstItem.harga)}
+                            </span>
+                            <span className="text-[10px] text-text-muted ml-1">/ tiket</span>
+                          </div>
                         </div>
 
-                        <Link 
-                          className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs py-2.5 px-5 rounded-xl transition shadow-md shadow-teal-500/5 focus:outline-none focus:ring-2 focus:ring-teal-500/20" 
-                          to={`/kursi/${schedule.id_jadwal}`}
-                        >
-                          Pilih Kursi
-                        </Link>
+                        {/* Showtime Pills */}
+                        <div className="flex flex-wrap gap-2.5">
+                          {items.map((sch) => (
+                            <Link
+                              key={sch.id_jadwal}
+                              to={`/kursi/${sch.id_jadwal}`}
+                              className="group flex flex-col items-center justify-center min-w-[76px] py-2 px-3 rounded-xl bg-canvas-elevated border border-border-elevated hover:border-gold-500 hover:bg-gold-500 transition duration-150 shadow-sm"
+                            >
+                              <span className="text-xs font-black font-mono text-text-headline group-hover:text-text-on-gold transition">
+                                {sch.jam_mulai}
+                              </span>
+                              <span className="text-[9px] font-medium text-text-muted group-hover:text-text-on-gold transition">
+                                s.d {sch.jam_selesai}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </article>
-                  ))}
+                    );
+                  })}
                 </div>
 
               </div>

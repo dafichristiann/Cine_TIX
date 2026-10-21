@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 import { BookingStatus } from '../common/enums/booking-status.enum';
 
@@ -107,13 +107,13 @@ export class PemesananService implements OnModuleInit, OnModuleDestroy {
   }
 
       generateKodeBooking(): string {
-        return `BK-${Date.now().toString(36).toUpperCase()}-${uuidv4()
+        return `BK-${Date.now().toString(36).toUpperCase()}-${randomUUID()
           .slice(0, 4)
           .toUpperCase()}`;
       }
       
       generateKodeTiket(): string {
-        return `TK-${uuidv4()
+        return `TK-${randomUUID()
           .slice(0, 8)
           .toUpperCase()}`;
       }
