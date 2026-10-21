@@ -48,12 +48,10 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-canvas-base text-text-body font-sans flex flex-col antialiased selection:bg-gold-500/20 selection:text-gold-300">
       
-      {/* 1. TOP HEADER / APP BAR (CINEMA XXI / TIX ID ROYAL MIDNIGHT & SATIN GOLD) */}
       <header className="sticky top-0 z-40 w-full bg-canvas-card/95 backdrop-blur-md border-b border-border-subtle shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             
-            {/* BRAND LOGO & CITY SELECTOR */}
             <div className="flex items-center space-x-6">
               <Link className="flex items-center space-x-2.5 group" to="/">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-black text-text-on-gold text-lg shadow-md shadow-gold-500/10 group-hover:scale-105 transition">
@@ -69,7 +67,6 @@ export default function Layout() {
                 </div>
               </Link>
 
-              {/* CITY PICKER (21 CINEPLEX / TIX ID SIGNATURE) */}
               <div className="relative hidden md:block">
                 <button
                   type="button"
@@ -112,7 +109,6 @@ export default function Layout() {
               </div>
             </div>
 
-            {/* DESKTOP NAVIGATION LINKS */}
             <nav className="hidden md:flex items-center space-x-1">
               {navLinks.map((link) => (
                 <NavLink

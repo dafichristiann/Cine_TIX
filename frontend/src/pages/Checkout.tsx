@@ -119,7 +119,7 @@ export default function Checkout() {
     try {
       const res = await api.post<PromoResult>('/cinema-features/promo/validate', {
         code: promoCode,
-        totalAmount: rawTotal,
+        subtotal: rawTotal,
       });
 
       if (res.data.valid) {

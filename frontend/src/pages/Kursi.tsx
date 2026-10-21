@@ -84,7 +84,6 @@ export default function Kursi() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 w-full max-w-7xl mx-auto">
       
-      {/* 1. TOP NAV BREADCRUMB */}
       <div className="flex items-center justify-between">
         <Link 
           to={schedule ? `/jadwal/${schedule.id_film}` : '/film'}
@@ -100,7 +99,6 @@ export default function Kursi() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* 2. DENAH KURSI (KIRI) */}
         <section className="lg:col-span-8 bg-canvas-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-xl space-y-8 overflow-hidden">
           
           <div className="border-b border-border-subtle pb-4">
@@ -120,7 +118,6 @@ export default function Kursi() {
 
           {error && <ErrorBanner message={error} />}
 
-          {/* LAYAR BIOSKOP PROYEKTOR (SATIN GOLD GLOW) */}
           <div className="w-full flex flex-col items-center justify-center space-y-3 pt-2">
             <div className="w-4/5 h-2.5 bg-gradient-to-r from-transparent via-gold-400/40 to-transparent rounded-t-full shadow-[0_-8px_20px_rgba(212,175,55,0.15)]" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
@@ -128,7 +125,6 @@ export default function Kursi() {
             </span>
           </div>
 
-          {/* MATRIKS DENAH */}
           {rows.length > 0 ? (
             <div className="overflow-x-auto py-4 flex flex-col items-center space-y-3 scrollbar-thin">
               {rows.map(([rowName, slots]) => (

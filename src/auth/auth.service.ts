@@ -32,7 +32,6 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  // 1. Registrasi Pengguna Baru
   async register(dto: RegisterDto) {
     const user = await this.penggunaService.create({
       email: dto.email,
@@ -46,7 +45,6 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  // 2. Login Pengguna
   async login(dto: LoginDto) {
     const user = await this.penggunaService.findByEmail(dto.email);
     if (!user) {
@@ -61,15 +59,10 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  // 3. Kirim OTP via SMTP Email
   async sendOtp(email: string, purpose: 'login' | 'register' = 'login', nama?: string) {
-    if (!email || !email.includes('@')) {
-      throw new BadRequestException('Format email tidak valid');
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 menit
+    const expiresAt = Date.now() + 10 * 60 * 1000;
 
     this.otpStore.set(cleanEmail, {
       otp,
@@ -87,12 +80,7 @@ export class AuthService {
     };
   }
 
-  // 4. Verifikasi OTP via SMTP
   async verifyOtp(email: string, otp: string) {
-    if (!email || !otp) {
-      throw new BadRequestException('Email dan kode OTP wajib diisi');
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const entry = this.otpStore.get(cleanEmail);
 
@@ -128,12 +116,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  // 5. Request Masuk dengan Google / Gmail
   async requestGoogleAuth(email: string) {
-    if (!email || !email.includes('@')) {
-      throw new BadRequestException('Format email tidak valid');
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail.endsWith('@gmail.com') && !cleanEmail.endsWith('@googlemail.com')) {
       throw new BadRequestException('Hanya alamat email @gmail.com yang diizinkan untuk login ini');
@@ -141,7 +124,7 @@ export class AuthService {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const magicToken = randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 menit
+    const expiresAt = Date.now() + 10 * 60 * 1000;
 
     this.googleAuthStore.set(cleanEmail, {
       otp,
@@ -161,12 +144,7 @@ export class AuthService {
     };
   }
 
-  // 6. Verifikasi Google Auth via 6-digit OTP
   async verifyGoogleOtp(email: string, otp: string) {
-    if (!email || !otp) {
-      throw new BadRequestException('Email dan kode OTP wajib diisi');
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const challenge = this.googleAuthStore.get(cleanEmail);
 
@@ -188,12 +166,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  // 7. Verifikasi Google Auth via Magic Link ("Ya, Ini Saya")
   async verifyGoogleMagicLink(email: string, token: string) {
-    if (!email || !token) {
-      throw new BadRequestException('Email dan token verifikasi wajib disertakan');
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const challenge = this.googleAuthStore.get(cleanEmail);
 
@@ -215,7 +188,6 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  // 8. Verifikasi Google OAuth 2.0 Credential (ID Token)
   async verifyGoogleOAuth(credential: string) {
     if (!credential) {
       throw new BadRequestException('Kredensial token Google wajib disertakan');
@@ -235,8 +207,8 @@ export class AuthService {
         picture?: string;
       };
 
-      const configuredClientId = process.env.GOOGLE_CLIENT_ID || '122715247460-hvjn3b4nl87tj4tk58llmdghslsv4cah.apps.googleusercontent.com';
-      if (payload.aud !== configuredClientId) {
+      const configuredClientId = process.env.GOOGLE_CLIENT_ID;
+      if (configuredClientId && payload.aud !== configuredClientId) {
         throw new UnauthorizedException('Klien ID Google tidak cocok dengan sistem');
       }
 
